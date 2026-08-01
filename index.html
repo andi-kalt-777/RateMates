@@ -34,6 +34,7 @@ const firebaseConfig={
   messagingSenderId: "977029677061",
   appId: "1:977029677061:web:d2b7b3d94820f710e1dc6c",
   measurementId: "G-FG9LH4LK9H"
+
 };
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
@@ -95,6 +96,7 @@ const BOOK_GENRES=["Roman","Krimi","Thriller","Fantasy","Science-Fiction","Histo
 const CAFE_TYPES=["Café","Rösterei-Café","Bäckerei / Konditorei","Frühstück / Brunch","Eiscafé","Teehaus","Andere"];
 const BAR_TYPES=["Cocktailbar","Pub / Kneipe","Weinbar","Biergarten","Rooftop-Bar","Sportsbar","Shisha-Bar","Club","Andere"];
 const ICE_TYPES=["Eisdiele","Eiscafé","Frozen Yogurt","Softeis","Veganes Eis","Andere"];
+const BEER_TYPES=["Pils","Helles","Weizen","Kölsch","Alt","Lager","IPA","Pale Ale","Stout / Porter","Bock","Radler","Alkoholfrei","Andere"];
 const COFFEE_TYPES=["Kaffeebohne","Espressobohne","Filterkaffee","Instant","Mokka","Cold Brew","Entkoffeiniert","Arabica","Robusta","Liberica","Excelsa","Andere"];
 const GIN_TYPES=["London Dry","Dry Gin","Old Tom","Plymouth","Sloe Gin","Navy Strength","New Western / Contemporary","Barrel Aged","Pink Gin","Genever","Andere"];
 const RUM_TYPES=["White / Silver","Gold","Dark","Aged / Añejo","Spiced","Overproof","Rhum Agricole","Navy","Cachaça","Andere"];
@@ -116,6 +118,7 @@ const CATEGORY_DEFS={
   film:{icon:"🎬",label:"Filme"},
   serie:{icon:"📺",label:"Serien"},
   coffee:{icon:"☕",label:"Kaffee"},
+  beer:{icon:"🍺",label:"Bier"},
   gin:{icon:"🍸",label:"Gin"},
   rum:{icon:"🥂",label:"Rum"},
   vodka:{icon:"🧊",label:"Vodka"},
@@ -129,7 +132,7 @@ const CATEGORY_GROUPS=[
   {id:"lokal",icon:"📍",label:"Lokalitäten",cats:["restaurant","cafe","bar","icecream"]},
   {id:"unterhaltung",icon:"🎭",label:"Unterhaltung",cats:["film","serie","book","audiobook"]},
   {id:"spirituosen",icon:"🥃",label:"Spirituosen",cats:["whisky","gin","rum","vodka"]},
-  {id:"genuss",icon:"😋",label:"Genuss",cats:["coffee"]},
+  {id:"genuss",icon:"😋",label:"Genuss",cats:["coffee","beer"]},
   {id:"freizeit",icon:"🌿",label:"Freizeit",cats:[]},
 ];
 
@@ -273,6 +276,17 @@ const ICE_CONFIG={
   suggHint:"💡 Noch nicht besucht — als Idee für den nächsten Sommer.",
   light:{headerBg:"#0c161c",headerSub:"#6e94a8",accent:"#2c7a9e",navActive:"#226180",btn:"#226180",btnColor:"#ffffff",chipOn:"#226180",chipOnColor:"#ffffff",filterOn:"#226180",filterOnColor:"#ffffff",toast:"#226180",toastColor:"#ffffff",suggAccent:"#226180"},
   dark:{headerBg:"#071018",headerSub:"#4e7488",accent:"#62b0d8",navActive:"#62b0d8",btn:"#62b0d8",btnColor:"#111110",chipOn:"#62b0d8",chipOnColor:"#111110",filterOn:"#62b0d8",filterOnColor:"#111110",toast:"#62b0d8",toastColor:"#111110",suggAccent:"#62b0d8"},
+};
+const BEER_CONFIG={
+  fbBase:"beers",fbSugg:"beer_suggestions",icon:"🍺",label:"Bier Führer",
+  field1Label:"Brauerei / Herkunft",field1Placeholder:"z.B. Gaffel, Köln",field1Key:"field1",
+  field1FilterLabel:"Alle Brauereien",typeFilterLabel:"Alle Sorten",genreOptions:BEER_TYPES,
+  starsLabel:"😋 Geschmack",
+  crit1Label:"🍃 Herbe / Bitterkeit",crit2Label:"🍺 Süffigkeit",crit1Short:"🍃 Herbe",crit2Short:"🍺 Süffigkeit",
+  namePlaceholder:"z.B. Gaffel Kölsch",saveToast:"✅ Bier gespeichert!",
+  emptyIcon:"🍺",emptyText:"Noch keine Biere",emptySuggText:"Noch keine Vorschläge",
+  addTitle:"Bier hinzufügen",addSuggTitle:"Bier Vorschlag",suggListTitle:"Bier Vorschläge",listLabel:"Bier",
+  suggHint:"💡 Noch nicht probiert — als Idee für das nächste Mal.",
 };
 function customConfig(cat){
   return{
@@ -527,7 +541,7 @@ function GroupsOverview({user,groups,onOpen,onLogout,dark,setDark,t,inviteMsg}){
   const isMaster=user===MASTER_USER;
   const [topicF,setTopicF]=useState("");
   const [sortBy,setSortBy]=useState("name");
-  const [form,setForm]=useState({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false}});
+  const [form,setForm]=useState({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,beer:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false}});
   const [error,setError]=useState("");
   const [saving,setSaving]=useState(false);
   const my=groups.filter(g=>g.members&&g.members[user]);
@@ -544,7 +558,7 @@ function GroupsOverview({user,groups,onOpen,onLogout,dark,setDark,t,inviteMsg}){
       const id=Date.now().toString();
       const categories=Object.fromEntries(Object.entries(form.categories).filter(([,v])=>v));
       await db.ref("groups/"+id).set({id,name:form.name.trim(),topic:form.topic.trim(),categories,members:{[user]:"admin"},createdBy:user,createdAt:Date.now()});
-      setForm({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false}});
+      setForm({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,beer:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false}});
       setView("list");
     }catch{setError("Fehler beim Erstellen.");}
     setSaving(false);
@@ -1702,14 +1716,14 @@ function MasterDashboard({onClose,t}){
     const load=async()=>{
       try{
         const get=path=>new Promise((res,rej)=>db.ref(path).once("value",s=>res(s.val()),rej));
-        const [users,groups,restaurants,whiskies,movies,series,coffees,gins,rums,vodkas,books,audiobooks,cafes,barsD,ices,sugg,wSugg,mSugg,sSugg,cSugg,gSugg,rSugg,vSugg,bSugg,aSugg,cafSugg,barSugg,iceSugg]=await Promise.all([
-          get("users"),get("groups"),get("restaurants"),get("whiskies"),get("movies"),get("series"),get("coffees"),get("gins"),get("rums"),get("vodkas"),get("books"),get("audiobooks"),get("cafes"),get("bars"),get("icecreams"),
-          get("suggestions"),get("whisky_suggestions"),get("movie_suggestions"),get("serie_suggestions"),get("coffee_suggestions"),get("gin_suggestions"),get("rum_suggestions"),get("vodka_suggestions"),get("book_suggestions"),get("audiobook_suggestions"),get("cafe_suggestions"),get("bar_suggestions"),get("icecream_suggestions"),
+        const [users,groups,restaurants,whiskies,movies,series,coffees,beers,gins,rums,vodkas,books,audiobooks,cafes,barsD,ices,sugg,wSugg,mSugg,sSugg,cSugg,beSugg,gSugg,rSugg,vSugg,bSugg,aSugg,cafSugg,barSugg,iceSugg]=await Promise.all([
+          get("users"),get("groups"),get("restaurants"),get("whiskies"),get("movies"),get("series"),get("coffees"),get("beers"),get("gins"),get("rums"),get("vodkas"),get("books"),get("audiobooks"),get("cafes"),get("bars"),get("icecreams"),
+          get("suggestions"),get("whisky_suggestions"),get("movie_suggestions"),get("serie_suggestions"),get("coffee_suggestions"),get("beer_suggestions"),get("gin_suggestions"),get("rum_suggestions"),get("vodka_suggestions"),get("book_suggestions"),get("audiobook_suggestions"),get("cafe_suggestions"),get("bar_suggestions"),get("icecream_suggestions"),
         ]);
         if(cancelled)return;
         const userCount=users?Object.keys(users).length:0;
         const groupCount=groups?Object.keys(groups).length:0;
-        const r=countRatings(restaurants),w=countRatings(whiskies),m=countRatings(movies),se=countRatings(series),co=countRatings(coffees),gi=countRatings(gins),ru=countRatings(rums),vo=countRatings(vodkas),bo=countRatings(books),au=countRatings(audiobooks),ca=countRatings(cafes),ba=countRatings(barsD),ic=countRatings(ices);
+        const r=countRatings(restaurants),w=countRatings(whiskies),m=countRatings(movies),se=countRatings(series),co=countRatings(coffees),be=countRatings(beers),gi=countRatings(gins),ru=countRatings(rums),vo=countRatings(vodkas),bo=countRatings(books),au=countRatings(audiobooks),ca=countRatings(cafes),ba=countRatings(barsD),ic=countRatings(ices);
         const cnt=o=>o?Object.keys(o).length:0;
         setStats({
           userCount,groupCount,
@@ -1727,9 +1741,10 @@ function MasterDashboard({onClose,t}){
             {icon:"🥂",label:"Rum",entries:ru.entries,ratings:ru.ratings,sugg:cnt(rSugg),color:"#a55e22"},
             {icon:"🧊",label:"Vodka",entries:vo.entries,ratings:vo.ratings,sugg:cnt(vSugg),color:"#3a7a9e"},
             {icon:"☕",label:"Kaffee",entries:co.entries,ratings:co.ratings,sugg:cnt(cSugg),color:"#8a5a2c"},
+            {icon:"🍺",label:"Bier",entries:be.entries,ratings:be.ratings,sugg:cnt(beSugg),color:"#b8860b"},
           ],
-          totalEntries:r.entries+w.entries+m.entries+se.entries+co.entries+gi.entries+ru.entries+vo.entries+bo.entries+au.entries+ca.entries+ba.entries+ic.entries,
-          totalRatings:r.ratings+w.ratings+m.ratings+se.ratings+co.ratings+gi.ratings+ru.ratings+vo.ratings+bo.ratings+au.ratings+ca.ratings+ba.ratings+ic.ratings,
+          totalEntries:r.entries+w.entries+m.entries+se.entries+co.entries+be.entries+gi.entries+ru.entries+vo.entries+bo.entries+au.entries+ca.entries+ba.entries+ic.entries,
+          totalRatings:r.ratings+w.ratings+m.ratings+se.ratings+co.ratings+be.ratings+gi.ratings+ru.ratings+vo.ratings+bo.ratings+au.ratings+ca.ratings+ba.ratings+ic.ratings,
         });
       }catch{if(!cancelled)setStats({error:true});}
     };
@@ -1875,6 +1890,7 @@ function App(){
   else if(mode==="film")content=<MediaApp {...shared} config={FILM_CONFIG}/>;
   else if(mode==="serie")content=<MediaApp {...shared} config={SERIE_CONFIG}/>;
   else if(mode==="coffee")content=<MediaApp {...shared} config={KAFFEE_CONFIG}/>;
+  else if(mode==="beer")content=<MediaApp {...shared} config={BEER_CONFIG}/>;
   else if(mode==="gin")content=<MediaApp {...shared} config={GIN_CONFIG}/>;
   else if(mode==="rum")content=<MediaApp {...shared} config={RUM_CONFIG}/>;
   else if(mode==="vodka")content=<MediaApp {...shared} config={VODKA_CONFIG}/>;
