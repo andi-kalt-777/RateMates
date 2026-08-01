@@ -34,7 +34,6 @@ const firebaseConfig={
   messagingSenderId: "977029677061",
   appId: "1:977029677061:web:d2b7b3d94820f710e1dc6c",
   measurementId: "G-FG9LH4LK9H"
-
 };
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
@@ -288,6 +287,33 @@ const BEER_CONFIG={
   addTitle:"Bier hinzufügen",addSuggTitle:"Bier Vorschlag",suggListTitle:"Bier Vorschläge",listLabel:"Bier",
   suggHint:"💡 Noch nicht probiert — als Idee für das nächste Mal.",
 };
+// Registry aller Standard-Kategorien für die globalen Übersichten
+const ALL_CATS=[
+  {id:"restaurant",icon:"🍽️",label:"Restaurants",base:"restaurants",sugg:"suggestions",kind:"rest"},
+  {id:"cafe",icon:"🍰",label:"Cafés",base:"cafes",sugg:"cafe_suggestions",kind:"media"},
+  {id:"bar",icon:"🍹",label:"Bars",base:"bars",sugg:"bar_suggestions",kind:"media"},
+  {id:"icecream",icon:"🍦",label:"Eisdielen",base:"icecreams",sugg:"icecream_suggestions",kind:"media"},
+  {id:"film",icon:"🎬",label:"Filme",base:"movies",sugg:"movie_suggestions",kind:"media"},
+  {id:"serie",icon:"📺",label:"Serien",base:"series",sugg:"serie_suggestions",kind:"media"},
+  {id:"book",icon:"📚",label:"Bücher",base:"books",sugg:"book_suggestions",kind:"media"},
+  {id:"audiobook",icon:"🎧",label:"Hörbücher",base:"audiobooks",sugg:"audiobook_suggestions",kind:"media"},
+  {id:"whisky",icon:"🥃",label:"Whiskys",base:"whiskies",sugg:"whisky_suggestions",kind:"whisky"},
+  {id:"gin",icon:"🍸",label:"Gin",base:"gins",sugg:"gin_suggestions",kind:"media"},
+  {id:"rum",icon:"🥂",label:"Rum",base:"rums",sugg:"rum_suggestions",kind:"media"},
+  {id:"vodka",icon:"🧊",label:"Vodka",base:"vodkas",sugg:"vodka_suggestions",kind:"media"},
+  {id:"coffee",icon:"☕",label:"Kaffee",base:"coffees",sugg:"coffee_suggestions",kind:"media"},
+  {id:"beer",icon:"🍺",label:"Bier",base:"beers",sugg:"beer_suggestions",kind:"media"},
+];
+function avgOfCat(cat,item){
+  if(cat.kind==="rest")return getAvgRest(item);
+  if(cat.kind==="whisky")return getAvgWhisky(item);
+  return getAvgMedia(item);
+}
+function subtitleOfCat(cat,item){
+  if(cat.kind==="rest")return [item.city,(Array.isArray(item.cuisines)?item.cuisines:[]).join(" & ")].filter(Boolean).join(" · ");
+  if(cat.kind==="whisky")return [item.distillery,(Array.isArray(item.types)?item.types:[]).join(" & ")].filter(Boolean).join(" · ");
+  return [item.field1||item.director||"",(Array.isArray(item.genres)?item.genres:[]).join(" & ")].filter(Boolean).join(" · ");
+}
 function customConfig(cat){
   return{
     fbBase:"custom_"+cat.id,fbSugg:"custom_"+cat.id+"_sugg",icon:cat.icon||"⭐",label:cat.name,
@@ -534,11 +560,8 @@ function LoginScreen({onLogin,invitePending}){
 }
 
 // Gruppenübersicht
-function GroupsOverview({user,groups,onOpen,onLogout,dark,setDark,t,inviteMsg}){
+function GroupsOverview({user,groups,onOpen,onLogout,dark,setDark,t,inviteMsg,onHome}){
   const [view,setView]=useState("list");
-  const [showAccount,setShowAccount]=useState(false);
-  const [showMaster,setShowMaster]=useState(false);
-  const isMaster=user===MASTER_USER;
   const [topicF,setTopicF]=useState("");
   const [sortBy,setSortBy]=useState("name");
   const [form,setForm]=useState({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,beer:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false}});
@@ -566,19 +589,14 @@ function GroupsOverview({user,groups,onOpen,onLogout,dark,setDark,t,inviteMsg}){
   return(
     <div style={{minHeight:"100vh",background:t.bg,maxWidth:440,margin:"0 auto",transition:"background 0.3s"}}>
       <div style={{background:t.restHeaderBg,padding:"20px 20px 16px",color:"white",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-        <div>
-          <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:18,fontWeight:700,letterSpacing:"-0.01em"}}>Meine Gruppen</div>
-          <div style={{fontSize:12,color:t.restHeaderSub,marginTop:4}}>{my.length} Gruppe{my.length!==1?"n":""}</div>
+        <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+          {onHome&&<button onClick={onHome} style={{background:"none",border:"none",color:"white",fontSize:20,cursor:"pointer",padding:"0 4px",lineHeight:"24px"}}>←</button>}
+          <div>
+            <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:18,fontWeight:700,letterSpacing:"-0.01em"}}>Meine Gruppen</div>
+            <div style={{fontSize:12,color:t.restHeaderSub,marginTop:4}}>{my.length} Gruppe{my.length!==1?"n":""}</div>
+          </div>
         </div>
-        <div style={{display:"flex",gap:6}}>
-          {isMaster&&<button onClick={()=>setShowMaster(true)} title="Master-Übersicht" style={{background:t.modeSwitchBg,border:`1px solid ${t.modeSwitchBorder}`,borderRadius:18,padding:"5px 11px",cursor:"pointer",fontSize:15}}>📊</button>}
-          <button onClick={()=>setShowAccount(true)} title="Passwort ändern" style={{background:t.modeSwitchBg,border:`1px solid ${t.modeSwitchBorder}`,borderRadius:18,padding:"5px 11px",cursor:"pointer",fontSize:15}}>🔑</button>
-          <button onClick={()=>setDark(d=>!d)} style={{background:t.modeSwitchBg,border:`1px solid ${t.modeSwitchBorder}`,borderRadius:18,padding:"5px 11px",cursor:"pointer",fontSize:15}}>{dark?"☀️":"🌙"}</button>
-        </div>
-      </div>
-      <div style={{background:"rgba(0,0,0,0.25)",padding:"7px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:12,color:"rgba(255,255,255,0.9)"}}>👤 <strong style={{color:"white"}}>{user}</strong></span>
-        <button onClick={onLogout} style={{fontSize:11,color:"rgba(255,255,255,0.7)",background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>Abmelden</button>
+        <UserMenu user={user} dark={dark} setDark={setDark} t={t} onLogout={onLogout}/>
       </div>
       {view==="list"&&(
         <div style={{padding:"20px 16px 40px"}}>
@@ -675,8 +693,6 @@ function GroupsOverview({user,groups,onOpen,onLogout,dark,setDark,t,inviteMsg}){
           <div style={{fontSize:12,color:t.sub,marginTop:12,textAlign:"center"}}>Du wirst automatisch Admin dieser Gruppe.</div>
         </div>
       )}
-      {showAccount&&<AccountSheet user={user} onClose={()=>setShowAccount(false)} t={t}/>}
-      {showMaster&&<MasterDashboard onClose={()=>setShowMaster(false)} t={t}/>}
     </div>
   );
 }
@@ -800,7 +816,7 @@ function modesForGroup(group){
 function ModeMenu({mode,setMode,modes,onClose,t}){
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:300}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:t.modal,borderRadius:"24px 24px 0 0",padding:"20px 16px 40px"}}>
+      <div onClick={e=>e.stopPropagation()} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:t.modal,borderRadius:"24px 24px 0 0",padding:"20px 16px 40px",maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
         <div style={{width:40,height:4,background:t.handle,borderRadius:2,margin:"0 auto 16px"}}/>
         <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:16,fontWeight:700,color:t.title,marginBottom:16,textAlign:"center"}}>Bereich wechseln</div>
         {(()=>{
@@ -826,7 +842,7 @@ function ModeMenu({mode,setMode,modes,onClose,t}){
     </div>
   );
 }
-function AppHeader({user,dark,setDark,mode,setMode,modes,t,title,subtitle,headerBg,headerSub,onBack,isAdmin,onSettings}){
+function AppHeader({user,dark,setDark,mode,setMode,modes,t,title,subtitle,headerBg,headerSub,onBack,isAdmin,onSettings,onLogout}){
   const [showMenu,setShowMenu]=useState(false);
   const currentIcon=(modes.find(m=>m[0]===mode)||["","⭐"])[1];
   return(
@@ -841,15 +857,10 @@ function AppHeader({user,dark,setDark,mode,setMode,modes,t,title,subtitle,header
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end",flexShrink:0,marginLeft:12}}>
           <div style={{display:"flex",gap:6}}>
-            {isAdmin&&<button onClick={onSettings} title="Gruppeneinstellungen" style={{background:t.modeSwitchBg,border:`1px solid ${t.modeSwitchBorder}`,borderRadius:18,padding:"5px 11px",cursor:"pointer",fontSize:15}}>⚙️</button>}
-            <button onClick={()=>setDark(d=>!d)} style={{background:t.modeSwitchBg,border:`1px solid ${t.modeSwitchBorder}`,borderRadius:18,padding:"5px 11px",cursor:"pointer",fontSize:15}}>{dark?"☀️":"🌙"}</button>
+            <UserMenu user={user} dark={dark} setDark={setDark} t={t} onLogout={onLogout} extraItems={isAdmin?[{icon:"⚙️",label:"Gruppen-Einstellungen",onClick:onSettings}]:[]}/>
           </div>
           {modes.length>1&&<button onClick={()=>setShowMenu(true)} title="Bereich wechseln" style={{background:t.modeSwitchBg,border:`1px solid ${t.modeSwitchBorder}`,borderRadius:18,padding:"5px 11px",cursor:"pointer",fontSize:15}}>{currentIcon}</button>}
         </div>
-      </div>
-      <div style={{background:"rgba(0,0,0,0.25)",padding:"7px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:12,color:"rgba(255,255,255,0.9)"}}>👤 <strong style={{color:"white"}}>{user}</strong></span>
-        <button onClick={()=>{localStorage.removeItem("rmg_user");window.location.reload();}} style={{fontSize:11,color:"rgba(255,255,255,0.7)",background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>Abmelden</button>
       </div>
       {showMenu&&<ModeMenu mode={mode} setMode={setMode} modes={modes} onClose={()=>setShowMenu(false)} t={t}/>}
     </>
@@ -961,7 +972,7 @@ function RestSuggModal({s,user,onClose,onDelete,onConvert,t}){
     </SwipeableSheet>
   );
 }
-function RestaurantApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,isAdmin,onSettings}){
+function RestaurantApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,isAdmin,onSettings,onLogout}){
   const [view,setView]=useState("list");
   const [activeSection,setSection]=useState("list");
   const [restaurants,setRestaurants]=useState([]);
@@ -1038,7 +1049,7 @@ function RestaurantApp({user,dark,setDark,mode,setMode,modes,t,group,members,onB
   if(loading)return(<div style={{minHeight:"100vh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}><div style={{fontSize:48}}>🍽️</div><div style={{fontFamily:"'Space Grotesk',sans-serif",color:t.sub,fontSize:14}}>Lade…</div></div>);
   return(
     <div style={{minHeight:"100vh",background:t.bg,maxWidth:440,margin:"0 auto",position:"relative",paddingBottom:92,transition:"background 0.3s"}}>
-      <AppHeader user={user} dark={dark} setDark={setDark} mode={mode} setMode={setMode} modes={modes} t={t}
+      <AppHeader user={user} dark={dark} setDark={setDark} mode={mode} setMode={setMode} modes={modes} t={t} onLogout={onLogout}
         title={"🍽️ Restaurants · "+group.name}
         subtitle={visible.length+" bewertet · "+visibleSugg.length+" Vorschlag"+(visibleSugg.length!==1?"e":"")}
         headerBg={t.restHeaderBg} headerSub={t.restHeaderSub} onBack={onBack} isAdmin={isAdmin} onSettings={onSettings}/>
@@ -1235,7 +1246,7 @@ function WhiskyRatingFields({form,setF,t}){
     </>
   );
 }
-function WhiskyApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,isAdmin,onSettings}){
+function WhiskyApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,isAdmin,onSettings,onLogout}){
   const [view,setView]=useState("list");
   const [activeSection,setSection]=useState("list");
   const [whiskies,setWhiskies]=useState([]);
@@ -1297,7 +1308,7 @@ function WhiskyApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,
   if(loading)return(<div style={{minHeight:"100vh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}><div style={{fontSize:48}}>🥃</div><div style={{fontFamily:"'Space Grotesk',sans-serif",color:t.sub,fontSize:14}}>Lade…</div></div>);
   return(
     <div style={{minHeight:"100vh",background:t.bg,maxWidth:440,margin:"0 auto",position:"relative",paddingBottom:92,transition:"background 0.3s"}}>
-      <AppHeader user={user} dark={dark} setDark={setDark} mode={mode} setMode={setMode} modes={modes} t={t}
+      <AppHeader user={user} dark={dark} setDark={setDark} mode={mode} setMode={setMode} modes={modes} t={t} onLogout={onLogout}
         title={"🥃 Whiskys · "+group.name}
         subtitle={visible.length+" bewertet · "+visibleSugg.length+" Vorschlag"+(visibleSugg.length!==1?"e":"")}
         headerBg={t.whiskyHeaderBg} headerSub={t.whiskyHeaderSub} onBack={onBack} isAdmin={isAdmin} onSettings={onSettings}/>
@@ -1482,7 +1493,7 @@ function MediaRatingFields({form,setF,accent,config,t}){
     </>
   );
 }
-function MediaApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,isAdmin,onSettings,config}){
+function MediaApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,isAdmin,onSettings,config,onLogout}){
   const mc=dark?GOLD_MODE:GLASS_MODE;
   const [view,setView]=useState("list");
   const [activeSection,setSection]=useState("list");
@@ -1548,7 +1559,7 @@ function MediaApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,i
   if(loading)return(<div style={{minHeight:"100vh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}><div style={{fontSize:48}}>{config.icon}</div><div style={{fontFamily:"'Space Grotesk',sans-serif",color:t.sub,fontSize:14}}>Lade…</div></div>);
   return(
     <div style={{minHeight:"100vh",background:t.bg,maxWidth:440,margin:"0 auto",position:"relative",paddingBottom:92,transition:"background 0.3s"}}>
-      <AppHeader user={user} dark={dark} setDark={setDark} mode={mode} setMode={setMode} modes={modes} t={t}
+      <AppHeader user={user} dark={dark} setDark={setDark} mode={mode} setMode={setMode} modes={modes} t={t} onLogout={onLogout}
         title={config.icon+" "+config.label.replace(" Führer","")+" · "+group.name}
         subtitle={visible.length+" bewertet · "+visibleSugg.length+" Vorschlag"+(visibleSugg.length!==1?"e":"")}
         headerBg={mc.headerBg} headerSub={mc.headerSub} onBack={onBack} isAdmin={isAdmin} onSettings={onSettings}/>
@@ -1802,6 +1813,201 @@ function MasterDashboard({onClose,t}){
   );
 }
 
+// BENUTZER-MENÜ (Avatar mit Initialen)
+function initialsOf(name){
+  const parts=(name||"").trim().split(/\s+/).filter(Boolean);
+  if(!parts.length)return "?";
+  if(parts.length===1)return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0]+parts[1][0]).toUpperCase();
+}
+function UserMenu({user,dark,setDark,t,onLogout,extraItems}){
+  const [open,setOpen]=useState(false);
+  const [showAccount,setShowAccount]=useState(false);
+  const [showMaster,setShowMaster]=useState(false);
+  const isMaster=user===MASTER_USER;
+  const accent=dark?"#fab600":"#6c7bff";
+  const accentText=dark?"#141414":"#ffffff";
+  const row={display:"flex",alignItems:"center",gap:12,width:"100%",padding:"14px 16px",marginBottom:8,background:t.innerCard,borderRadius:12,border:`1px solid ${t.cardBorder}`,cursor:"pointer",textAlign:"left",fontSize:14,color:t.title};
+  return(
+    <>
+      <button onClick={()=>setOpen(true)} title={user}
+        style={{width:36,height:36,borderRadius:"50%",background:accent,color:accentText,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"'Space Grotesk',sans-serif",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>{initialsOf(user)}</button>
+      {open&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:400}} onClick={()=>setOpen(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:t.modal,borderRadius:"24px 24px 0 0",padding:"20px 20px 36px",maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+            <div style={{width:40,height:4,background:t.handle,borderRadius:2,margin:"0 auto 18px"}}/>
+            <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
+              <div style={{width:52,height:52,borderRadius:"50%",background:accent,color:accentText,display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,fontWeight:700,fontFamily:"'Space Grotesk',sans-serif"}}>{initialsOf(user)}</div>
+              <div>
+                <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:17,fontWeight:700,color:t.title}}>{user}</div>
+                <div style={{fontSize:12,color:t.sub}}>Angemeldet</div>
+              </div>
+            </div>
+            <button onClick={()=>setDark(d=>!d)} style={row}>
+              <span style={{fontSize:18}}>{dark?"☀️":"🌙"}</span><span style={{flex:1}}>{dark?"Heller Modus":"Dunkler Modus"}</span>
+            </button>
+            <button onClick={()=>{setOpen(false);setShowAccount(true);}} style={row}>
+              <span style={{fontSize:18}}>🔑</span><span style={{flex:1}}>Passwort ändern</span>
+            </button>
+            {(extraItems||[]).map((x,i)=>(
+              <button key={i} onClick={()=>{setOpen(false);x.onClick();}} style={row}>
+                <span style={{fontSize:18}}>{x.icon}</span><span style={{flex:1}}>{x.label}</span>
+              </button>
+            ))}
+            {isMaster&&(
+              <button onClick={()=>{setOpen(false);setShowMaster(true);}} style={row}>
+                <span style={{fontSize:18}}>📊</span><span style={{flex:1}}>Master-Übersicht</span>
+              </button>
+            )}
+            <button onClick={()=>{setOpen(false);onLogout();}} style={{...row,color:t.danger,marginTop:10,marginBottom:0}}>
+              <span style={{fontSize:18}}>🚪</span><span style={{flex:1}}>Abmelden</span>
+            </button>
+          </div>
+        </div>
+      )}
+      {showAccount&&<AccountSheet user={user} onClose={()=>setShowAccount(false)} t={t}/>}
+      {showMaster&&<MasterDashboard onClose={()=>setShowMaster(false)} t={t}/>}
+    </>
+  );
+}
+// HAUPTSEITE
+function HomePage({user,dark,setDark,t,onNav,onLogout}){
+  const tiles=[
+    {id:"ratings",icon:"⭐",title:"Bewertungen",text:"Alle Wertungen von dir und deinen Freunden aus allen Gruppen"},
+    {id:"suggestions",icon:"💡",title:"Vorschläge",text:"Alle Ideen für das nächste Mal — gruppenübergreifend"},
+    {id:"groups",icon:"👥",title:"Gruppen",text:"Deine Gruppen öffnen, verwalten und Freunde einladen"},
+  ];
+  return(
+    <div style={{minHeight:"100vh",background:t.bg,maxWidth:440,margin:"0 auto",transition:"background 0.3s",display:"flex",flexDirection:"column",padding:"32px 20px 28px"}}>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:6}}>
+        <UserMenu user={user} dark={dark} setDark={setDark} t={t} onLogout={onLogout}/>
+      </div>
+      <img src={LOGO_SRC} alt="RateMates" style={{width:150,height:150,objectFit:"contain",margin:"4px auto 2px",display:"block"}}/>
+      <div style={{textAlign:"center",fontSize:13,color:t.sub,marginBottom:26}}>Hi <strong style={{color:t.title}}>{user}</strong>, was möchtest du tun?</div>
+      {tiles.map(x=>(
+        <button key={x.id} onClick={()=>onNav(x.id)}
+          style={{display:"flex",alignItems:"center",gap:16,width:"100%",padding:"18px 18px",marginBottom:12,background:t.card,borderRadius:16,border:`1.5px solid ${t.cardBorder}`,cursor:"pointer",textAlign:"left",boxShadow:`0 2px 10px ${t.cardShadow}`}}>
+          <span style={{fontSize:30}}>{x.icon}</span>
+          <span style={{flex:1}}>
+            <span style={{display:"block",fontFamily:"'Space Grotesk',sans-serif",fontSize:16,fontWeight:700,color:t.title}}>{x.title}</span>
+            <span style={{display:"block",fontSize:12,color:t.sub,marginTop:3}}>{x.text}</span>
+          </span>
+          <span style={{fontSize:18,color:t.tick}}>›</span>
+        </button>
+      ))}
+      <div style={{flex:1}}/>
+    </div>
+  );
+}
+// GLOBALE ÜBERSICHT: alle Bewertungen bzw. Vorschläge aus allen Gruppen
+function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
+  const isRatings=type==="ratings";
+  const my=groups.filter(g=>g.members&&g.members[user]);
+  const friends=[...new Set(my.flatMap(g=>Object.keys(g.members||{})))];
+  const activeCats=ALL_CATS.filter(c=>my.some(g=>g.categories?.[c.id]));
+  const [loaded,setLoaded]=useState(false);
+  const [raw,setRaw]=useState([]);
+  const [catF,setCatF]=useState("");
+  const [sortBy,setSortBy]=useState(isRatings?"cat":"new");
+  const [search,setSearch]=useState("");
+  useEffect(()=>{
+    let cancelled=false;
+    const get=p=>db.ref(p).get().then(s=>s.val()||{}).catch(()=>({}));
+    Promise.all(activeCats.map(c=>get(isRatings?c.base:c.sugg).then(d=>({cat:c,data:d}))))
+      .then(res=>{if(!cancelled){setRaw(res);setLoaded(true);}})
+      .catch(()=>{if(!cancelled)setLoaded(true);});
+    const tm=setTimeout(()=>setLoaded(true),8000);
+    return()=>{cancelled=true;clearTimeout(tm);};
+  },[]);
+  let items=[];
+  raw.forEach(({cat,data})=>{
+    Object.values(data||{}).forEach(it=>{
+      if(!it||!it.name)return;
+      if(isRatings){
+        const norm=cat.kind==="rest"?normalizeRest(it):it;
+        const vis=restrictToMembers(norm,friends);
+        const avg=avgOfCat(cat,vis);
+        if(avg.count>0)items.push({cat,item:vis,avg});
+      }else{
+        if(it.author&&friends.includes(it.author))items.push({cat,item:it});
+      }
+    });
+  });
+  const q=search.trim().toLowerCase();
+  items=items.filter(x=>(!catF||x.cat.id===catF)&&(!q||x.item.name.toLowerCase().includes(q)));
+  const ci=x=>ALL_CATS.findIndex(c=>c.id===x.cat.id);
+  items.sort((a,b)=>{
+    if(sortBy==="cat"){const c=ci(a)-ci(b);if(c!==0)return c;return isRatings?(b.avg.stars-a.avg.stars):a.item.name.localeCompare(b.item.name);}
+    if(sortBy==="best")return b.avg.stars-a.avg.stars;
+    if(sortBy==="count")return b.avg.count-a.avg.count;
+    if(sortBy==="new")return String(b.item.id).localeCompare(String(a.item.id));
+    return a.item.name.localeCompare(b.item.name);
+  });
+  const selStyle={padding:"7px 10px",borderRadius:20,border:`1px solid ${t.filterBorder}`,background:t.filterBg,color:t.filterColor,fontSize:12,cursor:"pointer",outline:"none",flexShrink:0};
+  return(
+    <div style={{minHeight:"100vh",background:t.bg,maxWidth:440,margin:"0 auto",transition:"background 0.3s"}}>
+      <div style={{background:t.restHeaderBg,padding:"20px 20px 16px",color:"white",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+        <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+          <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:20,cursor:"pointer",padding:"0 4px",lineHeight:"24px"}}>←</button>
+          <div>
+            <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:18,fontWeight:700,letterSpacing:"-0.01em"}}>{isRatings?"Alle Bewertungen":"Alle Vorschläge"}</div>
+            <div style={{fontSize:12,color:t.restHeaderSub,marginTop:4}}>Von dir und deinen Freunden · alle Gruppen</div>
+          </div>
+        </div>
+        <UserMenu user={user} dark={dark} setDark={setDark} t={t} onLogout={onLogout}/>
+      </div>
+      <div style={{padding:"16px 16px 40px"}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Suchen…"
+          style={{width:"100%",padding:"11px 14px",borderRadius:12,fontSize:14,border:`1.5px solid ${t.inputBorder}`,outline:"none",background:t.inputBg,color:t.inputColor,marginBottom:10}}/>
+        <div style={{display:"flex",gap:8,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
+          <select value={catF} onChange={e=>setCatF(e.target.value)} style={{...selStyle,...(catF?{background:t.restFilterOn,color:t.restFilterOnColor,border:`1px solid ${t.restFilterOn}`}:{})}}>
+            <option value="">Alle Kategorien</option>
+            {activeCats.map(c=><option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
+          </select>
+          <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={selStyle}>
+            {isRatings?(
+              <>
+                <option value="cat">Nach Kategorie</option>
+                <option value="best">Beste zuerst</option>
+                <option value="count">Meiste Wertungen</option>
+                <option value="name">Name A–Z</option>
+              </>
+            ):(
+              <>
+                <option value="new">Neueste zuerst</option>
+                <option value="cat">Nach Kategorie</option>
+                <option value="name">Name A–Z</option>
+              </>
+            )}
+          </select>
+        </div>
+        {!loaded&&<div style={{textAlign:"center",color:t.sub,fontSize:13,padding:"40px 0"}}>Lade…</div>}
+        {loaded&&items.length===0&&(
+          <div style={{textAlign:"center",padding:"48px 0",color:t.empty}}>
+            <div style={{fontSize:44,marginBottom:10}}>{isRatings?"⭐":"💡"}</div>
+            <div style={{fontSize:14}}>{isRatings?"Noch keine Bewertungen":"Noch keine Vorschläge"}</div>
+          </div>
+        )}
+        {loaded&&items.map(x=>(
+          <div key={x.cat.id+"_"+x.item.id} style={{display:"flex",alignItems:"center",gap:12,background:t.card,borderRadius:14,border:`1px solid ${t.cardBorder}`,padding:"13px 14px",marginBottom:9,boxShadow:`0 1px 6px ${t.cardShadow}`}}>
+            <span style={{fontSize:24}}>{x.cat.icon}</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:14.5,fontWeight:600,color:t.title,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{x.item.name}</div>
+              <div style={{fontSize:11.5,color:t.sub,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{[x.cat.label,subtitleOfCat(x.cat,x.item)].filter(Boolean).join(" · ")}</div>
+              {!isRatings&&<div style={{fontSize:11,color:t.tick,marginTop:2}}>von {x.item.author}</div>}
+            </div>
+            {isRatings&&(
+              <div style={{textAlign:"right",flexShrink:0}}>
+                <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:18,fontWeight:700,color:t.restAccent}}>{x.avg.stars}<span style={{fontSize:11,color:t.tick}}>/10</span></div>
+                <div style={{fontSize:10,color:t.tick}}>{x.avg.count} Wertung{x.avg.count!==1?"en":""}</div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 // TOP-LEVEL APP
 function readInviteFromUrl(){
   try{
@@ -1827,6 +2033,7 @@ function App(){
   const [showSettings,setShowSettings]=useState(false);
   const [seedDone,setSeedDone]=useState(false);
   const [pendingInvite,setPendingInvite]=useState(readInviteFromUrl());
+  const [page,setPage]=useState("home");
   const [inviteMsg,setInviteMsg]=useState("");
   const t=dark?DARK:LIGHT;
 
@@ -1843,12 +2050,12 @@ function App(){
     if(!g){setInviteMsg("⚠️ Diese Einladung ist ungültig oder die Gruppe existiert nicht mehr.");setPendingInvite(null);clearInviteHash();return;}
     if(g.members&&g.members[user]){
       // schon Mitglied -> einfach öffnen
-      setActiveGroupId(g.id);setMode(null);setPendingInvite(null);clearInviteHash();return;
+      setActiveGroupId(g.id);setMode(null);setPage("groups");setPendingInvite(null);clearInviteHash();return;
     }
     (async()=>{
       try{
         await db.ref("groups/"+g.id+"/members/"+user).set("member");
-        setActiveGroupId(g.id);setMode(null);
+        setActiveGroupId(g.id);setMode(null);setPage("groups");
         setInviteMsg("✅ Du bist der Gruppe „"+g.name+"“ beigetreten!");
         setTimeout(()=>setInviteMsg(""),3500);
       }catch{setInviteMsg("⚠️ Beitritt fehlgeschlagen. Bitte erneut versuchen.");}
@@ -1870,11 +2077,17 @@ function App(){
   }
   if(!user)return <LoginScreen onLogin={setUser} invitePending={!!pendingInvite}/>;
 
-  // Keine Gruppe gewählt: Übersicht
+  // Keine Gruppe gewählt: Hauptseite bzw. globale Ansichten
+  const doLogout=()=>{localStorage.removeItem("rmg_user");setUser(null);setPage("home");};
   if(!activeGroup){
-    return <GroupsOverview user={user} groups={groups} dark={dark} setDark={setDark} t={t} inviteMsg={inviteMsg}
-      onLogout={()=>{localStorage.removeItem("rmg_user");setUser(null);}}
-      onOpen={g=>{setActiveGroupId(g.id);setMode(null);}}/>;
+    if(page==="ratings")return <AllItemsPage type="ratings" user={user} groups={groups} dark={dark} setDark={setDark} t={t} onBack={()=>setPage("home")} onLogout={doLogout}/>;
+    if(page==="suggestions")return <AllItemsPage type="suggestions" user={user} groups={groups} dark={dark} setDark={setDark} t={t} onBack={()=>setPage("home")} onLogout={doLogout}/>;
+    if(page==="groups"){
+      return <GroupsOverview user={user} groups={groups} dark={dark} setDark={setDark} t={t} inviteMsg={inviteMsg}
+        onLogout={doLogout} onHome={()=>setPage("home")}
+        onOpen={g=>{setActiveGroupId(g.id);setMode(null);}}/>;
+    }
+    return <HomePage user={user} dark={dark} setDark={setDark} t={t} onNav={setPage} onLogout={doLogout}/>;
   }
 
   const members=Object.keys(activeGroup.members||{});
@@ -1882,7 +2095,7 @@ function App(){
   const modes=modesForGroup(activeGroup);
   const onBack=()=>{setActiveGroupId(null);setMode(null);};
   const onSettings=()=>setShowSettings(true);
-  const shared={user,dark,setDark,mode,setMode,modes,t,group:activeGroup,members,onBack,isAdmin,onSettings};
+  const shared={user,dark,setDark,mode,setMode,modes,t,group:activeGroup,members,onBack,isAdmin,onSettings,onLogout:doLogout};
 
   let content;
   if(mode==="restaurant")content=<RestaurantApp {...shared}/>;
