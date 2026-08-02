@@ -97,6 +97,9 @@ const CAFE_TYPES=["Café","Rösterei-Café","Bäckerei / Konditorei","Frühstüc
 const BAR_TYPES=["Cocktailbar","Pub / Kneipe","Weinbar","Biergarten","Rooftop-Bar","Sportsbar","Shisha-Bar","Club","Andere"];
 const ICE_TYPES=["Eisdiele","Eiscafé","Frozen Yogurt","Softeis","Veganes Eis","Andere"];
 const BEER_TYPES=["Pils","Helles","Weizen","Kölsch","Alt","Lager","IPA","Pale Ale","Stout / Porter","Bock","Radler","Alkoholfrei","Andere"];
+const WINE_TYPES=["Rotwein","Weißwein","Rosé","Sekt / Schaumwein","Champagner","Riesling","Spätburgunder","Merlot","Chardonnay","Sauvignon Blanc","Trocken","Halbtrocken","Lieblich","Andere"];
+const TEA_TYPES=["Schwarzer Tee","Grüner Tee","Kräutertee","Früchtetee","Weißer Tee","Oolong","Chai","Rooibos","Eistee","Andere"];
+const MATCHA_TYPES=["Ceremonial Grade","Premium Grade","Culinary Grade","Matcha Latte","Eis-Matcha","Bio","Japan","Andere"];
 const COFFEE_TYPES=["Kaffeebohne","Espressobohne","Filterkaffee","Instant","Mokka","Cold Brew","Entkoffeiniert","Arabica","Robusta","Liberica","Excelsa","Andere"];
 const GIN_TYPES=["London Dry","Dry Gin","Old Tom","Plymouth","Sloe Gin","Navy Strength","New Western / Contemporary","Barrel Aged","Pink Gin","Genever","Andere"];
 const RUM_TYPES=["White / Silver","Gold","Dark","Aged / Añejo","Spiced","Overproof","Rhum Agricole","Navy","Cachaça","Andere"];
@@ -119,6 +122,9 @@ const CATEGORY_DEFS={
   serie:{icon:"📺",label:"Serien"},
   coffee:{icon:"☕",label:"Kaffee"},
   beer:{icon:"🍺",label:"Bier"},
+  wine:{icon:"🍷",label:"Wein"},
+  tea:{icon:"🫖",label:"Tee"},
+  matcha:{icon:"🍵",label:"Matcha"},
   gin:{icon:"🍸",label:"Gin"},
   rum:{icon:"🥂",label:"Rum"},
   vodka:{icon:"🧊",label:"Vodka"},
@@ -132,7 +138,7 @@ const CATEGORY_GROUPS=[
   {id:"lokal",icon:"📍",label:"Lokalitäten",cats:["restaurant","cafe","bar","icecream"]},
   {id:"unterhaltung",icon:"🎭",label:"Unterhaltung",cats:["film","serie","book","audiobook"]},
   {id:"spirituosen",icon:"🥃",label:"Spirituosen",cats:["whisky","gin","rum","vodka"]},
-  {id:"genuss",icon:"😋",label:"Genuss",cats:["coffee","beer"]},
+  {id:"genuss",icon:"😋",label:"Genuss",cats:["coffee","beer","wine","tea","matcha"]},
   {id:"freizeit",icon:"🌿",label:"Freizeit",cats:[]},
 ];
 
@@ -288,6 +294,39 @@ const BEER_CONFIG={
   addTitle:"Bier hinzufügen",addSuggTitle:"Bier Vorschlag",suggListTitle:"Bier Vorschläge",listLabel:"Bier",
   suggHint:"💡 Noch nicht probiert — als Idee für das nächste Mal.",
 };
+const WINE_CONFIG={
+  fbBase:"wines",fbSugg:"wine_suggestions",icon:"🍷",label:"Wein Führer",
+  field1Label:"Weingut / Herkunft",field1Placeholder:"z.B. Rioja, Spanien",field1Key:"field1",
+  field1FilterLabel:"Alle Weingüter",typeFilterLabel:"Alle Sorten",genreOptions:WINE_TYPES,
+  starsLabel:"😋 Geschmack",
+  crit1Label:"🍇 Fruchtigkeit",crit2Label:"🍂 Körper / Tannine",crit1Short:"🍇 Frucht",crit2Short:"🍂 Körper",
+  namePlaceholder:"z.B. Marqués de Riscal",saveToast:"✅ Wein gespeichert!",
+  emptyIcon:"🍷",emptyText:"Noch keine Weine",emptySuggText:"Noch keine Vorschläge",
+  addTitle:"Wein hinzufügen",addSuggTitle:"Wein Vorschlag",suggListTitle:"Wein Vorschläge",listLabel:"Wein",
+  suggHint:"💡 Noch nicht probiert — als Idee für das nächste Mal.",
+};
+const TEA_CONFIG={
+  fbBase:"teas",fbSugg:"tea_suggestions",icon:"🫖",label:"Tee Führer",
+  field1Label:"Marke / Herkunft",field1Placeholder:"z.B. Meßmer, Darjeeling",field1Key:"field1",
+  field1FilterLabel:"Alle Marken",typeFilterLabel:"Alle Sorten",genreOptions:TEA_TYPES,
+  starsLabel:"😋 Geschmack",
+  crit1Label:"🌿 Aroma",crit2Label:"💪 Stärke",crit1Short:"🌿 Aroma",crit2Short:"💪 Stärke",
+  namePlaceholder:"z.B. Earl Grey",saveToast:"✅ Tee gespeichert!",
+  emptyIcon:"🫖",emptyText:"Noch keine Tees",emptySuggText:"Noch keine Vorschläge",
+  addTitle:"Tee hinzufügen",addSuggTitle:"Tee Vorschlag",suggListTitle:"Tee Vorschläge",listLabel:"Tee",
+  suggHint:"💡 Noch nicht probiert — als Idee für das nächste Mal.",
+};
+const MATCHA_CONFIG={
+  fbBase:"matchas",fbSugg:"matcha_suggestions",icon:"🍵",label:"Matcha Führer",
+  field1Label:"Marke / Herkunft",field1Placeholder:"z.B. Uji, Japan",field1Key:"field1",
+  field1FilterLabel:"Alle Marken",typeFilterLabel:"Alle Sorten",genreOptions:MATCHA_TYPES,
+  starsLabel:"😋 Geschmack",
+  crit1Label:"🌱 Umami",crit2Label:"🫧 Cremigkeit",crit1Short:"🌱 Umami",crit2Short:"🫧 Cremigkeit",
+  namePlaceholder:"z.B. Matcha Miyako",saveToast:"✅ Matcha gespeichert!",
+  emptyIcon:"🍵",emptyText:"Noch keine Matchas",emptySuggText:"Noch keine Vorschläge",
+  addTitle:"Matcha hinzufügen",addSuggTitle:"Matcha Vorschlag",suggListTitle:"Matcha Vorschläge",listLabel:"Matcha",
+  suggHint:"💡 Noch nicht probiert — als Idee für das nächste Mal.",
+};
 // Registry aller Standard-Kategorien für die globalen Übersichten
 const ALL_CATS=[
   {id:"restaurant",icon:"🍽️",label:"Restaurants",base:"restaurants",sugg:"suggestions",kind:"rest"},
@@ -304,6 +343,9 @@ const ALL_CATS=[
   {id:"vodka",icon:"🧊",label:"Vodka",base:"vodkas",sugg:"vodka_suggestions",kind:"media",cfg:VODKA_CONFIG},
   {id:"coffee",icon:"☕",label:"Kaffee",base:"coffees",sugg:"coffee_suggestions",kind:"media",cfg:KAFFEE_CONFIG},
   {id:"beer",icon:"🍺",label:"Bier",base:"beers",sugg:"beer_suggestions",kind:"media",cfg:BEER_CONFIG},
+  {id:"wine",icon:"🍷",label:"Wein",base:"wines",sugg:"wine_suggestions",kind:"media",cfg:WINE_CONFIG},
+  {id:"tea",icon:"🫖",label:"Tee",base:"teas",sugg:"tea_suggestions",kind:"media",cfg:TEA_CONFIG},
+  {id:"matcha",icon:"🍵",label:"Matcha",base:"matchas",sugg:"matcha_suggestions",kind:"media",cfg:MATCHA_CONFIG},
 ];
 function avgOfCat(cat,item){
   if(cat.kind==="rest")return getAvgRest(item);
@@ -578,7 +620,7 @@ function GroupsOverview({user,groups,onOpen,onLogout,dark,setDark,t,inviteMsg,on
   const [view,setView]=useState("list");
   const [topicF,setTopicF]=useState("");
   const [sortBy,setSortBy]=useState("name");
-  const [form,setForm]=useState({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,beer:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false}});
+  const [form,setForm]=useState({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,beer:false,wine:false,tea:false,matcha:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false}});
   const [error,setError]=useState("");
   const [saving,setSaving]=useState(false);
   const my=groups.filter(g=>g.members&&g.members[user]);
@@ -595,7 +637,7 @@ function GroupsOverview({user,groups,onOpen,onLogout,dark,setDark,t,inviteMsg,on
       const id=Date.now().toString();
       const categories=Object.fromEntries(Object.entries(form.categories).filter(([,v])=>v));
       await db.ref("groups/"+id).set({id,name:form.name.trim(),topic:form.topic.trim(),categories,members:{[user]:"admin"},createdBy:user,createdAt:Date.now()});
-      setForm({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,beer:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false}});
+      setForm({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,beer:false,wine:false,tea:false,matcha:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false}});
       setView("list");
     }catch{setError("Fehler beim Erstellen.");}
     setSaving(false);
@@ -1738,17 +1780,21 @@ function MasterDashboard({onClose,t}){
     const load=async()=>{
       try{
         const get=path=>new Promise((res,rej)=>db.ref(path).once("value",s=>res(s.val()),rej));
-        const [users,groups,restaurants,whiskies,movies,series,coffees,beers,gins,rums,vodkas,books,audiobooks,cafes,barsD,ices,sugg,wSugg,mSugg,sSugg,cSugg,beSugg,gSugg,rSugg,vSugg,bSugg,aSugg,cafSugg,barSugg,iceSugg]=await Promise.all([
-          get("users"),get("groups"),get("restaurants"),get("whiskies"),get("movies"),get("series"),get("coffees"),get("beers"),get("gins"),get("rums"),get("vodkas"),get("books"),get("audiobooks"),get("cafes"),get("bars"),get("icecreams"),
-          get("suggestions"),get("whisky_suggestions"),get("movie_suggestions"),get("serie_suggestions"),get("coffee_suggestions"),get("beer_suggestions"),get("gin_suggestions"),get("rum_suggestions"),get("vodka_suggestions"),get("book_suggestions"),get("audiobook_suggestions"),get("cafe_suggestions"),get("bar_suggestions"),get("icecream_suggestions"),
+        const [users,groups,restaurants,whiskies,movies,series,coffees,beers,wines,teas,matchas,gins,rums,vodkas,books,audiobooks,cafes,barsD,ices,catReqs,sugg,wSugg,mSugg,sSugg,cSugg,beSugg,wiSugg,teSugg,maSugg,gSugg,rSugg,vSugg,bSugg,aSugg,cafSugg,barSugg,iceSugg]=await Promise.all([
+          get("users"),get("groups"),get("restaurants"),get("whiskies"),get("movies"),get("series"),get("coffees"),get("beers"),get("wines"),get("teas"),get("matchas"),get("gins"),get("rums"),get("vodkas"),get("books"),get("audiobooks"),get("cafes"),get("bars"),get("icecreams"),get("category_requests"),
+          get("suggestions"),get("whisky_suggestions"),get("movie_suggestions"),get("serie_suggestions"),get("coffee_suggestions"),get("beer_suggestions"),get("wine_suggestions"),get("tea_suggestions"),get("matcha_suggestions"),get("gin_suggestions"),get("rum_suggestions"),get("vodka_suggestions"),get("book_suggestions"),get("audiobook_suggestions"),get("cafe_suggestions"),get("bar_suggestions"),get("icecream_suggestions"),
         ]);
         if(cancelled)return;
         const userCount=users?Object.keys(users).length:0;
         const groupCount=groups?Object.keys(groups).length:0;
-        const r=countRatings(restaurants),w=countRatings(whiskies),m=countRatings(movies),se=countRatings(series),co=countRatings(coffees),be=countRatings(beers),gi=countRatings(gins),ru=countRatings(rums),vo=countRatings(vodkas),bo=countRatings(books),au=countRatings(audiobooks),ca=countRatings(cafes),ba=countRatings(barsD),ic=countRatings(ices);
+        const r=countRatings(restaurants),w=countRatings(whiskies),m=countRatings(movies),se=countRatings(series),co=countRatings(coffees),be=countRatings(beers),wi=countRatings(wines),te=countRatings(teas),ma=countRatings(matchas),gi=countRatings(gins),ru=countRatings(rums),vo=countRatings(vodkas),bo=countRatings(books),au=countRatings(audiobooks),ca=countRatings(cafes),ba=countRatings(barsD),ic=countRatings(ices);
         const cnt=o=>o?Object.keys(o).length:0;
+        const catRequests=Object.values(catReqs||{}).map(r=>{
+          const us=r.users||{};
+          return{name:r.name||"?",count:Object.keys(us).length,users:Object.entries(us).map(([u,v])=>({u,note:typeof v==="string"?v:""}))};
+        }).sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name));
         setStats({
-          userCount,groupCount,
+          userCount,groupCount,catRequests,
           cats:[
             {icon:"🍽️",label:"Restaurants",entries:r.entries,ratings:r.ratings,sugg:cnt(sugg),color:t.restAccent},
             {icon:"🍰",label:"Cafés",entries:ca.entries,ratings:ca.ratings,sugg:cnt(cafSugg),color:"#a04a6e"},
@@ -1764,9 +1810,12 @@ function MasterDashboard({onClose,t}){
             {icon:"🧊",label:"Vodka",entries:vo.entries,ratings:vo.ratings,sugg:cnt(vSugg),color:"#3a7a9e"},
             {icon:"☕",label:"Kaffee",entries:co.entries,ratings:co.ratings,sugg:cnt(cSugg),color:"#8a5a2c"},
             {icon:"🍺",label:"Bier",entries:be.entries,ratings:be.ratings,sugg:cnt(beSugg),color:"#b8860b"},
+            {icon:"🍷",label:"Wein",entries:wi.entries,ratings:wi.ratings,sugg:cnt(wiSugg),color:"#8a2b3e"},
+            {icon:"🫖",label:"Tee",entries:te.entries,ratings:te.ratings,sugg:cnt(teSugg),color:"#5a7a3e"},
+            {icon:"🍵",label:"Matcha",entries:ma.entries,ratings:ma.ratings,sugg:cnt(maSugg),color:"#3e7a4a"},
           ],
-          totalEntries:r.entries+w.entries+m.entries+se.entries+co.entries+be.entries+gi.entries+ru.entries+vo.entries+bo.entries+au.entries+ca.entries+ba.entries+ic.entries,
-          totalRatings:r.ratings+w.ratings+m.ratings+se.ratings+co.ratings+be.ratings+gi.ratings+ru.ratings+vo.ratings+bo.ratings+au.ratings+ca.ratings+ba.ratings+ic.ratings,
+          totalEntries:r.entries+w.entries+m.entries+se.entries+co.entries+be.entries+wi.entries+te.entries+ma.entries+gi.entries+ru.entries+vo.entries+bo.entries+au.entries+ca.entries+ba.entries+ic.entries,
+          totalRatings:r.ratings+w.ratings+m.ratings+se.ratings+co.ratings+be.ratings+wi.ratings+te.ratings+ma.ratings+gi.ratings+ru.ratings+vo.ratings+bo.ratings+au.ratings+ca.ratings+ba.ratings+ic.ratings,
         });
       }catch{if(!cancelled)setStats({error:true});}
     };
@@ -1818,6 +1867,22 @@ function MasterDashboard({onClose,t}){
             </div>
           ))}
           <div style={{fontSize:11,color:t.tick,marginTop:8,textAlign:"center"}}>Bewertungen = Summe aller Einzelwertungen aller Nutzer, kategorienübergreifend gezählt.</div>
+          <div style={{fontSize:12,color:t.label,fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,margin:"20px 0 10px"}}>💭 Kategorie-Wünsche der Nutzer</div>
+          {(!stats.catRequests||stats.catRequests.length===0)&&(
+            <div style={{background:t.card,borderRadius:14,padding:"16px",border:`1px solid ${t.cardBorder}`,fontSize:13,color:t.sub,textAlign:"center"}}>Noch keine Vorschläge eingereicht.</div>
+          )}
+          {(stats.catRequests||[]).map(r=>(
+            <div key={r.name} style={{background:t.card,borderRadius:14,padding:"14px 16px",marginBottom:10,border:`1px solid ${t.cardBorder}`}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,fontSize:15,color:t.title,flex:1}}>{r.name}</span>
+                <span style={{background:t.restNavActive,color:t.btnColor,borderRadius:14,padding:"3px 12px",fontSize:13,fontWeight:700,fontFamily:"'Space Grotesk',sans-serif"}}>{r.count}×</span>
+              </div>
+              <div style={{fontSize:12,color:t.sub,marginTop:6}}>von: {r.users.map(x=>x.u).join(", ")}</div>
+              {r.users.filter(x=>x.note).map(x=>(
+                <div key={x.u} style={{fontSize:11.5,color:t.tick,marginTop:4,fontStyle:"italic"}}>{x.u}: „{x.note}"</div>
+              ))}
+            </div>
+          ))}
         </>
       )}
     </SwipeableSheet>
@@ -1878,12 +1943,53 @@ function UserMenu({user,dark,setDark,t,onLogout,extraItems}){
     </>
   );
 }
+// KATEGORIE-VORSCHLAG
+function catReqKey(name){
+  const k=name.toLowerCase().trim().replace(/[.#$/\[\]]/g,"").replace(/\s+/g,"_");
+  return k||"unbenannt";
+}
+function CategoryRequestSheet({user,t,onClose}){
+  const [name,setName]=useState("");
+  const [note,setNote]=useState("");
+  const [busy,setBusy]=useState(false);
+  const [msg,setMsg]=useState("");
+  const send=async()=>{
+    const n=name.trim();
+    if(!n){setMsg("Bitte gib einen Namen für die Kategorie an.");return;}
+    setBusy(true);setMsg("");
+    try{
+      const key=catReqKey(n);
+      await db.ref("category_requests/"+key+"/name").set(n);
+      await db.ref("category_requests/"+key+"/users/"+user).set(note.trim()||true);
+      setMsg("✅ Danke! Dein Vorschlag wurde übermittelt.");
+      setName("");setNote("");
+      setTimeout(onClose,1400);
+    }catch{setMsg("⚠️ Konnte nicht speichern. Bitte erneut versuchen.");}
+    setBusy(false);
+  };
+  const inp={width:"100%",padding:"13px 16px",borderRadius:12,fontSize:15,border:`1.5px solid ${t.inputBorder}`,outline:"none",background:t.inputBg,color:t.inputColor,marginBottom:12};
+  return(
+    <SwipeableSheet onClose={onClose} t={t} zIndex={400}>
+      <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:18,fontWeight:700,color:t.title,marginBottom:6,textAlign:"center"}}>💭 Kategorie vorschlagen</div>
+      <div style={{fontSize:13,color:t.sub,textAlign:"center",marginBottom:18}}>Welche Kategorie fehlt dir in RateMates?</div>
+      <input value={name} onChange={e=>{setName(e.target.value);setMsg("");}} placeholder="Name der Kategorie, z.B. Pizzerien" style={inp}/>
+      <input value={note} onChange={e=>setNote(e.target.value)} placeholder="Anmerkung (optional)" style={inp}/>
+      <button onClick={send} disabled={busy}
+        style={{width:"100%",padding:14,borderRadius:12,background:busy?t.sliderTrack:t.restBtn,color:t.btnColor,border:"none",cursor:"pointer",fontSize:15,fontWeight:700}}>
+        {busy?"Sende…":"Vorschlag absenden"}
+      </button>
+      {msg&&<div style={{marginTop:12,fontSize:13,textAlign:"center",color:msg.startsWith("✅")?t.restAccent:t.danger}}>{msg}</div>}
+    </SwipeableSheet>
+  );
+}
 // HAUPTSEITE
 function HomePage({user,dark,setDark,t,onNav,onLogout}){
+  const [showCatRequest,setShowCatRequest]=useState(false);
   const tiles=[
     {id:"ratings",icon:"⭐",title:"Bewertungen",text:"Alle Wertungen von dir und deinen Freunden aus allen Gruppen"},
     {id:"suggestions",icon:"💡",title:"Vorschläge",text:"Alle Ideen für das nächste Mal — gruppenübergreifend"},
     {id:"groups",icon:"👥",title:"Gruppen",text:"Deine Gruppen öffnen, verwalten und Freunde einladen"},
+    {id:"catRequest",icon:"💭",title:"Kategorie vorschlagen",text:"Dir fehlt eine Kategorie? Reich deinen Wunsch ein"},
   ];
   return(
     <div style={{minHeight:"100vh",background:t.bg,maxWidth:440,margin:"0 auto",transition:"background 0.3s",display:"flex",flexDirection:"column",padding:"32px 20px 28px"}}>
@@ -1893,7 +1999,7 @@ function HomePage({user,dark,setDark,t,onNav,onLogout}){
       <img src={dark?LOGO_SRC_DARK:LOGO_SRC} alt="RateMates" style={{width:150,height:150,objectFit:"contain",margin:"4px auto 2px",display:"block"}}/>
       <div style={{textAlign:"center",fontSize:13,color:t.sub,marginBottom:26}}>Hi <strong style={{color:t.title}}>{user}</strong>, was möchtest du tun?</div>
       {tiles.map(x=>(
-        <button key={x.id} onClick={()=>onNav(x.id)}
+        <button key={x.id} onClick={()=>x.id==="catRequest"?setShowCatRequest(true):onNav(x.id)}
           style={{display:"flex",alignItems:"center",gap:16,width:"100%",padding:"18px 18px",marginBottom:12,background:t.card,borderRadius:16,border:`1.5px solid ${t.cardBorder}`,cursor:"pointer",textAlign:"left",boxShadow:`0 2px 10px ${t.cardShadow}`}}>
           <span style={{fontSize:30}}>{x.icon}</span>
           <span style={{flex:1}}>
@@ -1904,6 +2010,7 @@ function HomePage({user,dark,setDark,t,onNav,onLogout}){
         </button>
       ))}
       <div style={{flex:1}}/>
+      {showCatRequest&&<CategoryRequestSheet user={user} t={t} onClose={()=>setShowCatRequest(false)}/>}
     </div>
   );
 }
@@ -2162,6 +2269,9 @@ function App(){
   else if(mode==="serie")content=<MediaApp {...shared} config={SERIE_CONFIG}/>;
   else if(mode==="coffee")content=<MediaApp {...shared} config={KAFFEE_CONFIG}/>;
   else if(mode==="beer")content=<MediaApp {...shared} config={BEER_CONFIG}/>;
+  else if(mode==="wine")content=<MediaApp {...shared} config={WINE_CONFIG}/>;
+  else if(mode==="tea")content=<MediaApp {...shared} config={TEA_CONFIG}/>;
+  else if(mode==="matcha")content=<MediaApp {...shared} config={MATCHA_CONFIG}/>;
   else if(mode==="gin")content=<MediaApp {...shared} config={GIN_CONFIG}/>;
   else if(mode==="rum")content=<MediaApp {...shared} config={RUM_CONFIG}/>;
   else if(mode==="vodka")content=<MediaApp {...shared} config={VODKA_CONFIG}/>;
