@@ -464,30 +464,36 @@ function FilterBar({filter,setFilter,col1,col2,col1Label,col2Label,extra=[],filt
     </>
   );
 }
-function SwipeableSheet({onClose,t,children}){
+function SwipeableSheet({onClose,t,children,zIndex}){
   const {useState:uS,useRef:uR}=React;
   const [dragY,setDragY]=uS(0);
   const startY=uR(null);
   const sheetRef=uR(null);
+  const inGrip=uR(false);
   const onTouchStart=e=>{
     const rect=sheetRef.current.getBoundingClientRect();
-    if(e.touches[0].clientY-rect.top>60)return;
+    inGrip.current=e.touches[0].clientY-rect.top<=60;
     startY.current=e.touches[0].clientY;
   };
   const onTouchMove=e=>{
     if(startY.current===null)return;
     const delta=e.touches[0].clientY-startY.current;
-    if(delta>0)setDragY(delta);
+    if(delta>0&&(inGrip.current||sheetRef.current.scrollTop<=0)){
+      setDragY(delta);
+      if(e.cancelable)e.preventDefault();
+    }else if(dragY!==0){
+      setDragY(0);
+    }
   };
   const onTouchEnd=()=>{
-    if(dragY>80)onClose();
-    setDragY(0);startY.current=null;
+    if(dragY>110)onClose();
+    setDragY(0);startY.current=null;inGrip.current=false;
   };
   return(
-    <div style={{position:"fixed",inset:0,background:`rgba(0,0,0,${Math.max(0,0.65-(dragY/300)*0.65)})`,zIndex:100,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
+    <div style={{position:"fixed",inset:0,background:`rgba(0,0,0,${Math.max(0,0.65-(dragY/300)*0.65)})`,zIndex:zIndex||100,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
       <div ref={sheetRef} onClick={e=>e.stopPropagation()}
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
-        style={{background:t.modal,borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:440,maxHeight:"90vh",overflowY:"auto",transform:`translateY(${dragY}px)`,transition:dragY===0?"transform 0.3s":"none",willChange:"transform"}}>
+        style={{background:t.modal,borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:440,maxHeight:"90vh",overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",transform:`translateY(${dragY}px)`,transition:dragY===0?"transform 0.3s":"none",willChange:"transform"}}>
         <div style={{width:40,height:4,background:t.handle,borderRadius:2,margin:"0 auto 20px",cursor:"grab"}}/>
         {children}
       </div>
@@ -821,9 +827,7 @@ function modesForGroup(group){
 }
 function ModeMenu({mode,setMode,modes,onClose,t}){
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:300}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:t.modal,borderRadius:"24px 24px 0 0",padding:"20px 16px 40px",maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
-        <div style={{width:40,height:4,background:t.handle,borderRadius:2,margin:"0 auto 16px"}}/>
+    <SwipeableSheet onClose={onClose} t={t} zIndex={300}>
         <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:16,fontWeight:700,color:t.title,marginBottom:16,textAlign:"center"}}>Bereich wechseln</div>
         {(()=>{
           const byId=Object.fromEntries(modes.map(m=>[m[0],m]));
@@ -844,8 +848,7 @@ function ModeMenu({mode,setMode,modes,onClose,t}){
             </div>
           ));
         })()}
-      </div>
-    </div>
+    </SwipeableSheet>
   );
 }
 function AppHeader({user,dark,setDark,mode,setMode,modes,t,title,subtitle,headerBg,headerSub,onBack,isAdmin,onSettings,onLogout}){
@@ -1839,9 +1842,7 @@ function UserMenu({user,dark,setDark,t,onLogout,extraItems}){
       <button onClick={()=>setOpen(true)} title={user}
         style={{width:36,height:36,borderRadius:"50%",background:accent,color:accentText,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"'Space Grotesk',sans-serif",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>{initialsOf(user)}</button>
       {open&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:400}} onClick={()=>setOpen(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:t.modal,borderRadius:"24px 24px 0 0",padding:"20px 20px 36px",maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
-            <div style={{width:40,height:4,background:t.handle,borderRadius:2,margin:"0 auto 18px"}}/>
+        <SwipeableSheet onClose={()=>setOpen(false)} t={t} zIndex={400}>
             <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
               <div style={{width:52,height:52,borderRadius:"50%",background:accent,color:accentText,display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,fontWeight:700,fontFamily:"'Space Grotesk',sans-serif"}}>{initialsOf(user)}</div>
               <div>
@@ -1868,8 +1869,7 @@ function UserMenu({user,dark,setDark,t,onLogout,extraItems}){
             <button onClick={()=>{setOpen(false);onLogout();}} style={{...row,color:t.danger,marginTop:10,marginBottom:0}}>
               <span style={{fontSize:18}}>🚪</span><span style={{flex:1}}>Abmelden</span>
             </button>
-          </div>
-        </div>
+        </SwipeableSheet>
       )}
       {showAccount&&<AccountSheet user={user} onClose={()=>setShowAccount(false)} t={t}/>}
       {showMaster&&<MasterDashboard onClose={()=>setShowMaster(false)} t={t}/>}
@@ -1981,8 +1981,7 @@ function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
         </div>
       </div>
       {showCatMenu&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:300}} onClick={()=>setShowCatMenu(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:t.modal,borderRadius:"24px 24px 0 0",padding:"20px 16px 40px",maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+        <SwipeableSheet onClose={()=>setShowCatMenu(false)} t={t} zIndex={300}>
             <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:16,fontWeight:700,color:t.title,marginBottom:16,textAlign:"center"}}>Kategorie wählen</div>
             <button onClick={()=>chooseCat("")}
               style={{display:"flex",alignItems:"center",gap:16,width:"100%",padding:"14px 16px",marginBottom:10,background:!catF?`${t.restNavActive}18`:t.innerCard,borderRadius:12,border:`1.5px solid ${!catF?t.restNavActive:t.cardBorder}`,cursor:"pointer",textAlign:"left"}}>
@@ -2003,8 +2002,7 @@ function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
                 ))}
               </div>
             ))}
-          </div>
-        </div>
+        </SwipeableSheet>
       )}
       <div style={{padding:"16px 16px 40px"}}>
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Suchen…"
