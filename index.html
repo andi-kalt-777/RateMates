@@ -62,6 +62,7 @@ function normalizeRest(r){
   }
   return{...r,ratings:r.author?{[r.author]:{food:r.food??5,service:r.service??5,price:r.price??3,stars:r.stars??7}}:{}};
 }
+function dupKey(name,f1){return (name||"").trim().toLowerCase()+"|"+(f1||"").trim().toLowerCase();}
 function restrictToMembers(item,members){
   return{...item,ratings:Object.fromEntries(Object.entries(item.ratings||{}).filter(([k])=>members.includes(k)))};
 }
@@ -1071,7 +1072,25 @@ function RestaurantApp({user,dark,setDark,mode,setMode,modes,t,group,members,onB
   });
   const valRest=()=>{const e={};if(!form.name.trim())e.name="Bitte Name eingeben";if(!form.city.trim())e.city="Bitte Stadt eingeben";if(!form.cuisines.length)e.cuisines="Bitte Küche auswählen";return e;};
   const valSugg=()=>{const e={};if(!suggForm.name.trim())e.name="Bitte Name eingeben";if(!suggForm.city.trim())e.city="Bitte Stadt eingeben";if(!suggForm.cuisines.length)e.cuisines="Bitte Küche auswählen";return e;};
-  const handleAdd=async()=>{const e=valRest();if(Object.keys(e).length){setErrors(e);return;}setSaving(true);try{const id=Date.now().toString();await db.ref("restaurants/"+id).set({id,name:form.name,city:form.city.trim(),cuisines:form.cuisines,author:user,ratings:{[user]:{food:form.food,service:form.service,price:form.price,stars:form.stars,kommentar:form.kommentar}}});if(suggToConvert){await db.ref("suggestions/"+suggToConvert.id).remove();setSuggToConvert(null);}setForm({...EMPTY_REST});setErrors({});setView("list");setSection("list");showToast("✅ Gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
+  const handleAdd=async()=>{const e=valRest();if(Object.keys(e).length){setErrors(e);return;}
+    const _key=dupKey(form.name,form.city);
+    const _dup=restaurants.find(r=>dupKey(r.name,r.city)===_key);
+    if(_dup){
+      if(!window.confirm("„"+_dup.name+"“ gibt es hier bereits. Deine Wertung wird dem bestehenden Eintrag hinzugefügt. Fortfahren?"))return;
+      setSaving(true);
+      try{
+        await db.ref("restaurants/"+_dup.id+"/ratings/"+user).set({food:form.food,service:form.service,price:form.price,stars:form.stars,kommentar:form.kommentar});
+        if(suggToConvert){await db.ref("suggestions/"+suggToConvert.id).remove();setSuggToConvert(null);}
+        setForm({...EMPTY_REST});setErrors({});setView("list");setSection("list");showToast("✅ Wertung hinzugefügt!");
+      }catch{showToast("⚠️ Fehler");}
+      setSaving(false);return;
+    }
+    const _dupS=!suggToConvert&&suggestions.find(s=>dupKey(s.name,s.city)===_key);
+    if(_dupS){
+      if(!window.confirm("„"+_dupS.name+"“ steht bereits in den Vorschlägen und wird jetzt in die Bewertungen übernommen. Fortfahren?"))return;
+      try{await db.ref("suggestions/"+_dupS.id).remove();}catch{}
+    }
+    setSaving(true);try{const id=Date.now().toString();await db.ref("restaurants/"+id).set({id,name:form.name,city:form.city.trim(),cuisines:form.cuisines,author:user,ratings:{[user]:{food:form.food,service:form.service,price:form.price,stars:form.stars,kommentar:form.kommentar}}});if(suggToConvert){await db.ref("suggestions/"+suggToConvert.id).remove();setSuggToConvert(null);}setForm({...EMPTY_REST});setErrors({});setView("list");setSection("list");showToast("✅ Gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleEdit=r=>{const my=r.ratings?.[user]||EMPTY_RATING;setForm({name:r.name,city:r.city,cuisines:Array.isArray(r.cuisines)?r.cuisines:(r.cuisine?[r.cuisine]:[]),food:my.food,service:my.service,price:my.price,stars:my.stars,kommentar:my.kommentar||""});setEditingId(r.id);setSelected(null);setSuggToConvert(null);setErrors({});setView("add");setSection("list");};
   const handleUpdate=async()=>{const e=valRest();if(Object.keys(e).length){setErrors(e);return;}setSaving(true);try{await db.ref("restaurants/"+editingId).update({name:form.name,city:form.city.trim(),cuisines:form.cuisines});await db.ref("restaurants/"+editingId+"/ratings/"+user).set({food:form.food,service:form.service,price:form.price,stars:form.stars,kommentar:form.kommentar});setForm({...EMPTY_REST});setEditingId(null);setErrors({});setView("list");setSection("list");showToast("✅ Aktualisiert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleDelete=async id=>{if(!window.confirm("Diesen Eintrag wirklich löschen? Alle Bewertungen dazu gehen verloren."))return;try{await db.ref("restaurants/"+id).remove();setSelected(null);showToast("🗑️ Gelöscht");}catch{showToast("⚠️ Fehler");}};
@@ -1086,7 +1105,13 @@ function RestaurantApp({user,dark,setDark,mode,setMode,modes,t,group,members,onB
     await db.ref().update(updates);
     setView("list");setSection("list");setRatingTarget(null);showToast("✅ Wertung gespeichert!");
   }catch{showToast("⚠️ Fehler");}setSaving(false);};
-  const handleAddSugg=async()=>{const e=valSugg();if(Object.keys(e).length){setSuggErrors(e);return;}setSaving(true);try{const id=Date.now().toString();await db.ref("suggestions/"+id).set({id,name:suggForm.name,city:suggForm.city.trim(),cuisines:suggForm.cuisines,author:user});setSuggForm({...EMPTY_SUGG});setSuggErrors({});setView("suggestions");setSection("suggestions");showToast("✅ Vorschlag gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
+  const handleAddSugg=async()=>{const e=valSugg();if(Object.keys(e).length){setSuggErrors(e);return;}
+    const _key=dupKey(suggForm.name,suggForm.city);
+    const _dupS=suggestions.find(s=>dupKey(s.name,s.city)===_key);
+    if(_dupS){showToast("💡 Bereits vorgeschlagen von "+_dupS.author+"!");return;}
+    const _dupR=restaurants.find(r=>dupKey(r.name,r.city)===_key);
+    if(_dupR){showToast("⭐ Gibt es schon in den Bewertungen!");return;}
+    setSaving(true);try{const id=Date.now().toString();await db.ref("suggestions/"+id).set({id,name:suggForm.name,city:suggForm.city.trim(),cuisines:suggForm.cuisines,author:user});setSuggForm({...EMPTY_SUGG});setSuggErrors({});setView("suggestions");setSection("suggestions");showToast("✅ Vorschlag gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleDeleteSugg=async id=>{if(!window.confirm("Diesen Vorschlag wirklich löschen?"))return;try{await db.ref("suggestions/"+id).remove();setSuggSelected(null);showToast("🗑️ Gelöscht");}catch{showToast("⚠️ Fehler");}};
   const handleConvertSugg=s=>{setForm({name:s.name,city:s.city,cuisines:Array.isArray(s.cuisines)?s.cuisines:[],food:5,service:5,price:3,stars:7,kommentar:""});setSuggToConvert(s);setEditingId(null);setErrors({});setSuggSelected(null);setView("add");setSection("list");};
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
@@ -1339,13 +1364,37 @@ function WhiskyApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,
   const filteredS=visibleSugg.filter(s=>(!sFilter.k1||s.distillery===sFilter.k1)&&(!sFilter.k2||(Array.isArray(s.types)&&s.types.includes(sFilter.k2)))&&(!sFilter.search||s.name.toLowerCase().includes(sFilter.search.toLowerCase())));
   const valW=()=>{const e={};if(!form.name.trim())e.name="Bitte Name eingeben";if(!form.distillery.trim())e.distillery="Bitte Destillerie eingeben";if(!form.types.length)e.types="Bitte Typ auswählen";return e;};
   const valS=()=>{const e={};if(!suggForm.name.trim())e.name="Bitte Name eingeben";if(!suggForm.distillery.trim())e.distillery="Bitte Destillerie eingeben";if(!suggForm.types.length)e.types="Bitte Typ auswählen";return e;};
-  const handleAdd=async()=>{const e=valW();if(Object.keys(e).length){setErrors(e);return;}setSaving(true);try{const id=Date.now().toString();await db.ref("whiskies/"+id).set({id,name:form.name,distillery:form.distillery.trim(),types:form.types,author:user,ratings:{[user]:{stars:form.stars,rauchigkeit:form.rauchigkeit,fruchtigkeit:form.fruchtigkeit,kommentar:form.kommentar}}});if(suggToConvert){await db.ref("whisky_suggestions/"+suggToConvert.id).remove();setSuggToConvert(null);}setForm({...EMPTY_WHISKY});setErrors({});setView("list");setSection("list");showToast("✅ Whisky gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
+  const handleAdd=async()=>{const e=valW();if(Object.keys(e).length){setErrors(e);return;}
+    const _key=dupKey(form.name,form.distillery);
+    const _dup=whiskies.find(w=>dupKey(w.name,w.distillery)===_key);
+    if(_dup){
+      if(!window.confirm("„"+_dup.name+"“ gibt es hier bereits. Deine Wertung wird dem bestehenden Eintrag hinzugefügt. Fortfahren?"))return;
+      setSaving(true);
+      try{
+        await db.ref("whiskies/"+_dup.id+"/ratings/"+user).set({stars:form.stars,rauchigkeit:form.rauchigkeit,fruchtigkeit:form.fruchtigkeit,kommentar:form.kommentar});
+        if(suggToConvert){await db.ref("whisky_suggestions/"+suggToConvert.id).remove();setSuggToConvert(null);}
+        setForm({...EMPTY_WHISKY});setErrors({});setView("list");setSection("list");showToast("✅ Wertung hinzugefügt!");
+      }catch{showToast("⚠️ Fehler");}
+      setSaving(false);return;
+    }
+    const _dupS=!suggToConvert&&suggestions.find(s=>dupKey(s.name,s.distillery)===_key);
+    if(_dupS){
+      if(!window.confirm("„"+_dupS.name+"“ steht bereits in den Vorschlägen und wird jetzt in die Bewertungen übernommen. Fortfahren?"))return;
+      try{await db.ref("whisky_suggestions/"+_dupS.id).remove();}catch{}
+    }
+    setSaving(true);try{const id=Date.now().toString();await db.ref("whiskies/"+id).set({id,name:form.name,distillery:form.distillery.trim(),types:form.types,author:user,ratings:{[user]:{stars:form.stars,rauchigkeit:form.rauchigkeit,fruchtigkeit:form.fruchtigkeit,kommentar:form.kommentar}}});if(suggToConvert){await db.ref("whisky_suggestions/"+suggToConvert.id).remove();setSuggToConvert(null);}setForm({...EMPTY_WHISKY});setErrors({});setView("list");setSection("list");showToast("✅ Whisky gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleEdit=w=>{const my=w.ratings?.[user]||EMPTY_W_RATING;setForm({name:w.name,distillery:w.distillery,types:Array.isArray(w.types)?w.types:[],stars:my.stars,rauchigkeit:my.rauchigkeit,fruchtigkeit:my.fruchtigkeit,kommentar:my.kommentar||""});setEditingId(w.id);setSelected(null);setSuggToConvert(null);setErrors({});setView("add");setSection("list");};
   const handleUpdate=async()=>{const e=valW();if(Object.keys(e).length){setErrors(e);return;}setSaving(true);try{await db.ref("whiskies/"+editingId).update({name:form.name,distillery:form.distillery.trim(),types:form.types});await db.ref("whiskies/"+editingId+"/ratings/"+user).set({stars:form.stars,rauchigkeit:form.rauchigkeit,fruchtigkeit:form.fruchtigkeit,kommentar:form.kommentar});setForm({...EMPTY_WHISKY});setEditingId(null);setErrors({});setView("list");setSection("list");showToast("✅ Aktualisiert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleDelete=async id=>{if(!window.confirm("Diesen Eintrag wirklich löschen? Alle Bewertungen dazu gehen verloren."))return;try{await db.ref("whiskies/"+id).remove();setSelected(null);showToast("🗑️ Gelöscht");}catch{showToast("⚠️ Fehler");}};
   const startRate=w=>{setRatingForm(w.ratings?.[user]||{...EMPTY_W_RATING});setRatingTarget(w);setSelected(null);setView("rate");};
   const handleSaveRating=async()=>{setSaving(true);try{await db.ref("whiskies/"+ratingTarget.id+"/ratings/"+user).set(ratingForm);setView("list");setSection("list");setRatingTarget(null);showToast("✅ Wertung gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
-  const handleAddSugg=async()=>{const e=valS();if(Object.keys(e).length){setSuggErrors(e);return;}setSaving(true);try{const id=Date.now().toString();await db.ref("whisky_suggestions/"+id).set({id,name:suggForm.name,distillery:suggForm.distillery.trim(),types:suggForm.types,author:user});setSuggForm({...EMPTY_W_SUGG});setSuggErrors({});setView("suggestions");setSection("suggestions");showToast("✅ Vorschlag gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
+  const handleAddSugg=async()=>{const e=valS();if(Object.keys(e).length){setSuggErrors(e);return;}
+    const _key=dupKey(suggForm.name,suggForm.distillery);
+    const _dupS=suggestions.find(s=>dupKey(s.name,s.distillery)===_key);
+    if(_dupS){showToast("💡 Bereits vorgeschlagen von "+_dupS.author+"!");return;}
+    const _dupW=whiskies.find(w=>dupKey(w.name,w.distillery)===_key);
+    if(_dupW){showToast("⭐ Gibt es schon in den Bewertungen!");return;}
+    setSaving(true);try{const id=Date.now().toString();await db.ref("whisky_suggestions/"+id).set({id,name:suggForm.name,distillery:suggForm.distillery.trim(),types:suggForm.types,author:user});setSuggForm({...EMPTY_W_SUGG});setSuggErrors({});setView("suggestions");setSection("suggestions");showToast("✅ Vorschlag gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleDeleteSugg=async id=>{if(!window.confirm("Diesen Vorschlag wirklich löschen?"))return;try{await db.ref("whisky_suggestions/"+id).remove();setSuggSelected(null);showToast("🗑️ Gelöscht");}catch{showToast("⚠️ Fehler");}};
   const handleConvertSugg=s=>{setForm({name:s.name,distillery:s.distillery,types:Array.isArray(s.types)?s.types:[],stars:7,rauchigkeit:5,fruchtigkeit:5,kommentar:""});setSuggToConvert(s);setEditingId(null);setErrors({});setSuggSelected(null);setView("add");setSection("list");};
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
@@ -1591,13 +1640,39 @@ function MediaApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,i
   const valM=()=>{const e={};if(!form.name.trim())e.name="Bitte Name eingeben";if(hasGenres&&!form.genres.length)e.genres="Bitte Genre auswählen";return e;};
   const valS=()=>{const e={};if(!suggForm.name.trim())e.name="Bitte Name eingeben";if(hasGenres&&!suggForm.genres.length)e.genres="Bitte Genre auswählen";return e;};
   const buildItem=base=>({id:base.id,name:form.name,[fk]:form.field1.trim(),field1:form.field1.trim(),genres:form.genres,author:user});
-  const handleAdd=async()=>{const e=valM();if(Object.keys(e).length){setErrors(e);return;}setSaving(true);try{const id=Date.now().toString();await db.ref(config.fbBase+"/"+id).set({id,name:form.name,[fk]:form.field1.trim(),field1:form.field1.trim(),genres:form.genres,author:user,ratings:{[user]:{stars:form.stars,handlung:form.handlung,spannung:form.spannung,kommentar:form.kommentar}}});if(suggToConvert){await db.ref(config.fbSugg+"/"+suggToConvert.id).remove();setSuggToConvert(null);}setForm({...EMPTY_MEDIA});setErrors({});setView("list");setSection("list");showToast(config.saveToast);}catch{showToast("⚠️ Fehler");}setSaving(false);};
+  const handleAdd=async()=>{const e=valM();if(Object.keys(e).length){setErrors(e);return;}
+    const _f1=i=>i.field1!==undefined&&i.field1!==null?i.field1:(i[fk]||"");
+    const _key=dupKey(form.name,form.field1);
+    const _dup=items.find(i=>dupKey(i.name,_f1(i))===_key);
+    if(_dup){
+      if(!window.confirm("„"+_dup.name+"“ gibt es hier bereits. Deine Wertung wird dem bestehenden Eintrag hinzugefügt. Fortfahren?"))return;
+      setSaving(true);
+      try{
+        await db.ref(config.fbBase+"/"+_dup.id+"/ratings/"+user).set({stars:form.stars,handlung:form.handlung,spannung:form.spannung,kommentar:form.kommentar});
+        if(suggToConvert){await db.ref(config.fbSugg+"/"+suggToConvert.id).remove();setSuggToConvert(null);}
+        setForm({...EMPTY_MEDIA});setErrors({});setView("list");setSection("list");showToast("✅ Wertung hinzugefügt!");
+      }catch{showToast("⚠️ Fehler");}
+      setSaving(false);return;
+    }
+    const _dupS=!suggToConvert&&suggestions.find(s=>dupKey(s.name,_f1(s))===_key);
+    if(_dupS){
+      if(!window.confirm("„"+_dupS.name+"“ steht bereits in den Vorschlägen und wird jetzt in die Bewertungen übernommen. Fortfahren?"))return;
+      try{await db.ref(config.fbSugg+"/"+_dupS.id).remove();}catch{}
+    }
+    setSaving(true);try{const id=Date.now().toString();await db.ref(config.fbBase+"/"+id).set({id,name:form.name,[fk]:form.field1.trim(),field1:form.field1.trim(),genres:form.genres,author:user,ratings:{[user]:{stars:form.stars,handlung:form.handlung,spannung:form.spannung,kommentar:form.kommentar}}});if(suggToConvert){await db.ref(config.fbSugg+"/"+suggToConvert.id).remove();setSuggToConvert(null);}setForm({...EMPTY_MEDIA});setErrors({});setView("list");setSection("list");showToast(config.saveToast);}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleEdit=x=>{const my=x.ratings?.[user]||EMPTY_MEDIA_RATING;setForm({name:x.name,field1:getField1(x),genres:Array.isArray(x.genres)?x.genres:[],stars:my.stars,handlung:my.handlung,spannung:my.spannung,kommentar:my.kommentar||""});setEditingId(x.id);setSelected(null);setSuggToConvert(null);setErrors({});setView("add");setSection("list");};
   const handleUpdate=async()=>{const e=valM();if(Object.keys(e).length){setErrors(e);return;}setSaving(true);try{await db.ref(config.fbBase+"/"+editingId).update({name:form.name,[fk]:form.field1.trim(),field1:form.field1.trim(),genres:form.genres});await db.ref(config.fbBase+"/"+editingId+"/ratings/"+user).set({stars:form.stars,handlung:form.handlung,spannung:form.spannung,kommentar:form.kommentar});setForm({...EMPTY_MEDIA});setEditingId(null);setErrors({});setView("list");setSection("list");showToast("✅ Aktualisiert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleDelete=async id=>{if(!window.confirm("Diesen Eintrag wirklich löschen? Alle Bewertungen dazu gehen verloren."))return;try{await db.ref(config.fbBase+"/"+id).remove();setSelected(null);showToast("🗑️ Gelöscht");}catch{showToast("⚠️ Fehler");}};
   const startRate=x=>{setRatingForm(x.ratings?.[user]||{...EMPTY_MEDIA_RATING});setRatingTarget(x);setSelected(null);setView("rate");};
   const handleSaveRating=async()=>{setSaving(true);try{await db.ref(config.fbBase+"/"+ratingTarget.id+"/ratings/"+user).set(ratingForm);setView("list");setSection("list");setRatingTarget(null);showToast("✅ Wertung gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
-  const handleAddSugg=async()=>{const e=valS();if(Object.keys(e).length){setSuggErrors(e);return;}setSaving(true);try{const id=Date.now().toString();await db.ref(config.fbSugg+"/"+id).set({id,name:suggForm.name,[fk]:suggForm.field1.trim(),field1:suggForm.field1.trim(),genres:suggForm.genres,author:user});setSuggForm({...EMPTY_MEDIA_SUGG});setSuggErrors({});setView("suggestions");setSection("suggestions");showToast("✅ Vorschlag gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
+  const handleAddSugg=async()=>{const e=valS();if(Object.keys(e).length){setSuggErrors(e);return;}
+    const _f1=i=>i.field1!==undefined&&i.field1!==null?i.field1:(i[fk]||"");
+    const _key=dupKey(suggForm.name,suggForm.field1);
+    const _dupS=suggestions.find(s=>dupKey(s.name,_f1(s))===_key);
+    if(_dupS){showToast("💡 Bereits vorgeschlagen von "+_dupS.author+"!");return;}
+    const _dupI=items.find(i=>dupKey(i.name,_f1(i))===_key);
+    if(_dupI){showToast("⭐ Gibt es schon in den Bewertungen!");return;}
+    setSaving(true);try{const id=Date.now().toString();await db.ref(config.fbSugg+"/"+id).set({id,name:suggForm.name,[fk]:suggForm.field1.trim(),field1:suggForm.field1.trim(),genres:suggForm.genres,author:user});setSuggForm({...EMPTY_MEDIA_SUGG});setSuggErrors({});setView("suggestions");setSection("suggestions");showToast("✅ Vorschlag gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleDeleteSugg=async id=>{if(!window.confirm("Diesen Vorschlag wirklich löschen?"))return;try{await db.ref(config.fbSugg+"/"+id).remove();setSuggSelected(null);showToast("🗑️ Gelöscht");}catch{showToast("⚠️ Fehler");}};
   const handleConvertSugg=s=>{setForm({name:s.name,field1:getField1(s),genres:Array.isArray(s.genres)?s.genres:[],stars:7,handlung:5,spannung:5,kommentar:""});setSuggToConvert(s);setEditingId(null);setErrors({});setSuggSelected(null);setView("add");setSection("list");};
   const f=(k,v)=>setForm(p=>({...p,[k]:v}));
@@ -2014,6 +2089,160 @@ function HomePage({user,dark,setDark,t,onNav,onLogout}){
     </div>
   );
 }
+// FORMULAR-METADATEN je Kategorie (für globales Anlegen)
+function catFormMeta(cat){
+  if(cat.kind==="rest")return{f1Label:"Stadt",f1Ph:"z.B. Köln",options:CUISINES,optLabel:"Küche"};
+  if(cat.kind==="whisky")return{f1Label:"Destillerie",f1Ph:"z.B. Laphroaig",options:WHISKY_TYPES,optLabel:"Sorte"};
+  return{f1Label:(cat.cfg&&cat.cfg.field1Label)||"Details",f1Ph:(cat.cfg&&cat.cfg.field1Placeholder)||"",options:(cat.cfg&&cat.cfg.genreOptions)||[],optLabel:"Sorte / Genre"};
+}
+// GLOBALES ANLEGEN: neuer Eintrag mit eigener Wertung bzw. neuer Vorschlag
+function GlobalAddSheet({cat,user,isRatings,t,onClose,onSaved}){
+  const meta=catFormMeta(cat);
+  const [name,setName]=useState("");
+  const [f1,setF1]=useState("");
+  const [sel,setSel]=useState([]);
+  const [vals,setVals]=useState(cat.kind==="rest"?{food:5,service:5,price:3,stars:7}:cat.kind==="whisky"?{stars:7,rauchigkeit:5,fruchtigkeit:5}:{stars:7,handlung:5,spannung:5});
+  const [kommentar,setKommentar]=useState("");
+  const [busy,setBusy]=useState(false);
+  const [msg,setMsg]=useState("");
+  const setV=(k,v)=>setVals(p=>({...p,[k]:v}));
+  const toggle=o=>setSel(p=>p.includes(o)?p.filter(x=>x!==o):[...p,o]);
+  const accent=t.restAccent;
+  const inp={width:"100%",padding:"13px 16px",borderRadius:12,fontSize:15,border:`1.5px solid ${t.inputBorder}`,outline:"none",background:t.inputBg,color:t.inputColor,marginBottom:12};
+  const save=async()=>{
+    const n=name.trim();
+    if(!n){setMsg("Bitte gib einen Namen an.");return;}
+    if(cat.kind==="rest"&&!f1.trim()){setMsg("Bitte gib die Stadt an.");return;}
+    setBusy(true);setMsg("");
+    try{
+      // Duplikatprüfung: gleicher Name + gleiche Stadt/gleiches Medium in dieser Kategorie
+      const fkG=(cat.cfg&&cat.cfg.field1Key)||"field1";
+      const f1Of=i=>cat.kind==="rest"?i.city:cat.kind==="whisky"?i.distillery:(i.field1!==undefined&&i.field1!==null?i.field1:(i[fkG]||""));
+      const [baseSnap,suggSnap]=await Promise.all([db.ref(cat.base).get().catch(()=>null),db.ref(cat.sugg).get().catch(()=>null)]);
+      const baseArr=baseSnap&&baseSnap.val()?Object.values(baseSnap.val()):[];
+      const suggArr=suggSnap&&suggSnap.val()?Object.values(suggSnap.val()):[];
+      const key=dupKey(n,f1);
+      const dupB=baseArr.find(i=>i&&dupKey(i.name,f1Of(i))===key);
+      const dupS=suggArr.find(i=>i&&dupKey(i.name,f1Of(i))===key);
+      const myRating=cat.kind==="rest"?{food:vals.food,service:vals.service,price:vals.price,stars:vals.stars,kommentar}
+        :cat.kind==="whisky"?{stars:vals.stars,rauchigkeit:vals.rauchigkeit,fruchtigkeit:vals.fruchtigkeit,kommentar}
+        :{stars:vals.stars,handlung:vals.handlung,spannung:vals.spannung,kommentar};
+      if(isRatings){
+        if(dupB){
+          if(!window.confirm("„"+dupB.name+"“ gibt es bereits. Deine Wertung wird dem bestehenden Eintrag hinzugefügt. Fortfahren?")){setBusy(false);return;}
+          await db.ref(cat.base+"/"+dupB.id+"/ratings/"+user).set(myRating);
+          onSaved();return;
+        }
+        if(dupS){
+          if(!window.confirm("„"+dupS.name+"“ steht bereits in den Vorschlägen und wird jetzt in die Bewertungen übernommen. Fortfahren?")){setBusy(false);return;}
+          await db.ref(cat.sugg+"/"+dupS.id).remove().catch(()=>{});
+        }
+      }else{
+        if(dupS){setMsg("💡 Diesen Vorschlag gibt es bereits (von "+dupS.author+").");setBusy(false);return;}
+        if(dupB){setMsg("⭐ Das ist bereits in den Bewertungen vorhanden.");setBusy(false);return;}
+      }
+      const id=Date.now().toString();
+      let data;
+      if(cat.kind==="rest"){
+        data={id,name:n,city:f1.trim(),cuisines:sel,author:user};
+        if(isRatings)data.ratings={[user]:{food:vals.food,service:vals.service,price:vals.price,stars:vals.stars,kommentar}};
+      }else if(cat.kind==="whisky"){
+        data={id,name:n,distillery:f1.trim(),types:sel,author:user};
+        if(isRatings)data.ratings={[user]:{stars:vals.stars,rauchigkeit:vals.rauchigkeit,fruchtigkeit:vals.fruchtigkeit,kommentar}};
+      }else{
+        const fk=(cat.cfg&&cat.cfg.field1Key)||"field1";
+        data={id,name:n,[fk]:f1.trim(),field1:f1.trim(),genres:sel,author:user};
+        if(isRatings)data.ratings={[user]:{stars:vals.stars,handlung:vals.handlung,spannung:vals.spannung,kommentar}};
+      }
+      await db.ref((isRatings?cat.base:cat.sugg)+"/"+id).set(data);
+      onSaved();
+    }catch{setMsg("⚠️ Konnte nicht speichern. Bitte erneut versuchen.");setBusy(false);}
+  };
+  return(
+    <SwipeableSheet onClose={onClose} t={t} zIndex={350}>
+      <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:18,fontWeight:700,color:t.title,marginBottom:16,textAlign:"center"}}>{cat.icon} {isRatings?((cat.cfg&&cat.cfg.addTitle)||cat.label.replace(/s$/,"")+" hinzufügen"):"Vorschlag: "+cat.label}</div>
+      <input value={name} onChange={e=>{setName(e.target.value);setMsg("");}} placeholder="Name" style={inp}/>
+      <input value={f1} onChange={e=>{setF1(e.target.value);setMsg("");}} placeholder={meta.f1Label+(meta.f1Ph?" — "+meta.f1Ph:"")} style={inp}/>
+      {meta.options.length>0&&(
+        <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:16}}>
+          {meta.options.map(o=>(
+            <button key={o} onClick={()=>toggle(o)}
+              style={{padding:"6px 12px",borderRadius:16,border:`1.5px solid ${sel.includes(o)?t.restChipOn:t.chipBorder}`,background:sel.includes(o)?t.restChipOn:t.chipBg,color:sel.includes(o)?t.restChipOnColor:t.chipColor,fontSize:12,cursor:"pointer"}}>{o}</button>
+          ))}
+        </div>
+      )}
+      {isRatings&&cat.kind==="rest"&&(<>
+        <Slider label="⭐ Gesamtwertung" value={vals.stars} min={0} max={10} onChange={v=>setV("stars",v)} color={accent} t={t}/>
+        <Slider label="🍜 Essen" value={vals.food} min={0} max={10} onChange={v=>setV("food",v)} color="#2e7d52" t={t}/>
+        <Slider label="💁 Service" value={vals.service} min={0} max={10} onChange={v=>setV("service",v)} color="#3a5a9e" t={t}/>
+        <Slider label="💰 Preis" value={vals.price} min={1} max={5} onChange={v=>setV("price",v)} color="#8a5a2c" display={v=>"€".repeat(v)} t={t}/>
+      </>)}
+      {isRatings&&cat.kind==="whisky"&&(<>
+        <Slider label="⭐ Gesamtgeschmack" value={vals.stars} min={0} max={10} onChange={v=>setV("stars",v)} color={accent} t={t}/>
+        <Slider label="🌫️ Rauchigkeit" value={vals.rauchigkeit} min={0} max={10} onChange={v=>setV("rauchigkeit",v)} color="#5a6472" t={t}/>
+        <Slider label="🍒 Fruchtigkeit" value={vals.fruchtigkeit} min={0} max={10} onChange={v=>setV("fruchtigkeit",v)} color="#a8364e" t={t}/>
+      </>)}
+      {isRatings&&cat.kind==="media"&&(<>
+        <Slider label={(cat.cfg&&cat.cfg.starsLabel)||"⭐ Gesamtwertung"} value={vals.stars} min={0} max={10} onChange={v=>setV("stars",v)} color={accent} t={t}/>
+        <Slider label={(cat.cfg&&cat.cfg.crit1Label)||"Kriterium 1"} value={vals.handlung} min={0} max={10} onChange={v=>setV("handlung",v)} color="#2e7d52" t={t}/>
+        <Slider label={(cat.cfg&&cat.cfg.crit2Label)||"Kriterium 2"} value={vals.spannung} min={0} max={10} onChange={v=>setV("spannung",v)} color="#3a5a9e" t={t}/>
+      </>)}
+      {isRatings&&<textarea value={kommentar} onChange={e=>setKommentar(e.target.value)} placeholder="Kommentar (optional)" rows={2} style={{...inp,resize:"none",fontFamily:"inherit"}}/>}
+      <button onClick={save} disabled={busy}
+        style={{width:"100%",padding:14,borderRadius:12,background:busy?t.sliderTrack:t.restBtn,color:t.btnColor,border:"none",cursor:"pointer",fontSize:15,fontWeight:700}}>
+        {busy?"Speichere…":(isRatings?"Speichern":"Vorschlag speichern")}
+      </button>
+      {msg&&<div style={{marginTop:12,fontSize:13,textAlign:"center",color:msg.startsWith("⚠️")?t.danger:t.sub}}>{msg}</div>}
+    </SwipeableSheet>
+  );
+}
+// GLOBALE DETAIL-ANSICHT
+function GlobalDetailSheet({entry,isRatings,t,onClose}){
+  const {cat,item,avg}=entry;
+  const meta=catFilterMeta(cat);
+  const sub=subtitleOfCat(cat,item);
+  const critLabels=cat.kind==="rest"
+    ?[["food","🍜 Essen"],["service","💁 Service"],["price","💰 Preis"]]
+    :cat.kind==="whisky"
+    ?[["rauchigkeit","🌫️ Rauchigkeit"],["fruchtigkeit","🍒 Fruchtigkeit"]]
+    :[["handlung",(cat.cfg&&cat.cfg.crit1Short)||"Kriterium 1"],["spannung",(cat.cfg&&cat.cfg.crit2Short)||"Kriterium 2"]];
+  return(
+    <SwipeableSheet onClose={onClose} t={t} zIndex={350}>
+      <div style={{textAlign:"center",marginBottom:6}}><span style={{fontSize:40}}>{cat.icon}</span></div>
+      <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:20,fontWeight:700,color:t.title,textAlign:"center"}}>{item.name}</div>
+      <div style={{fontSize:12.5,color:t.sub,textAlign:"center",marginTop:4}}>{[cat.label,sub].filter(Boolean).join(" · ")}</div>
+      {isRatings?(
+        <>
+          <div style={{marginTop:14,background:t.innerCard,borderRadius:12,padding:12,textAlign:"center"}}>
+            <div style={{fontSize:11,color:t.sub}}>⭐ Durchschnitt</div>
+            <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:30,fontWeight:700,color:t.restAccent}}>{avg.stars}/10</div>
+            <div style={{fontSize:10,color:t.tick}}>aus {avg.count} Wertung{avg.count!==1?"en":""}</div>
+          </div>
+          <div style={{fontSize:12,color:t.label,fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,margin:"16px 0 8px"}}>Einzelne Wertungen</div>
+          {Object.entries(item.ratings||{}).map(([u,r])=>(
+            <div key={u} style={{background:t.ratingRow,border:`1px solid ${t.ratingBorder}`,borderRadius:12,padding:"11px 14px",marginBottom:8}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:13.5,fontWeight:700,color:t.title,flex:1}}>{u}</span>
+                <span style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:16,fontWeight:700,color:t.restAccent}}>{r.stars}<span style={{fontSize:10,color:t.tick}}>/10</span></span>
+              </div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",fontSize:11.5,color:t.sub,marginTop:6}}>
+                {critLabels.map(([k,l])=>(
+                  <span key={k} style={{background:t.innerCard,borderRadius:8,padding:"4px 9px"}}>{l}: {k==="price"?"€".repeat(r[k]||0):(r[k]??"–")}</span>
+                ))}
+              </div>
+              {r.kommentar&&<div style={{fontSize:12,color:t.sub,marginTop:6,fontStyle:"italic"}}>„{r.kommentar}"</div>}
+            </div>
+          ))}
+        </>
+      ):(
+        <div style={{marginTop:16,background:t.innerCard,borderRadius:12,padding:14,textAlign:"center"}}>
+          <div style={{fontSize:13,color:t.sub}}>💡 Vorgeschlagen von <strong style={{color:t.title}}>{item.author}</strong></div>
+          {!isNaN(+item.id)&&<div style={{fontSize:11,color:t.tick,marginTop:5}}>am {new Date(+item.id).toLocaleDateString("de-DE")}</div>}
+        </div>
+      )}
+    </SwipeableSheet>
+  );
+}
 // GLOBALE ÜBERSICHT: alle Bewertungen bzw. Vorschläge aus allen Gruppen
 function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
   const isRatings=type==="ratings";
@@ -2024,6 +2253,10 @@ function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
   const [raw,setRaw]=useState([]);
   const [catF,setCatF]=useState("");
   const [showCatMenu,setShowCatMenu]=useState(false);
+  const [showAdd,setShowAdd]=useState(false);
+  const [addCat,setAddCat]=useState(null);
+  const [detail,setDetail]=useState(null);
+  const [reloadKey,setReloadKey]=useState(0);
   const [k1F,setK1F]=useState("");
   const [k2F,setK2F]=useState("");
   const [sortBy,setSortBy]=useState(isRatings?"cat":"new");
@@ -2036,7 +2269,7 @@ function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
       .catch(()=>{if(!cancelled)setLoaded(true);});
     const tm=setTimeout(()=>setLoaded(true),8000);
     return()=>{cancelled=true;clearTimeout(tm);};
-  },[]);
+  },[reloadKey]);
   const chooseCat=id=>{setCatF(id);setK1F("");setK2F("");setShowCatMenu(false);};
   let items=[];
   raw.forEach(({cat,data})=>{
@@ -2085,6 +2318,7 @@ function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
           </div>
         </div>
         <div style={{display:"flex",gap:6,flexShrink:0,marginLeft:12}}>
+          <button onClick={()=>setShowAdd(true)} title={isRatings?"Neu bewerten":"Neuer Vorschlag"} style={{background:t.modeSwitchBg,border:`1px solid ${t.modeSwitchBorder}`,borderRadius:18,padding:"5px 13px",cursor:"pointer",fontSize:16,fontWeight:700,color:"white"}}>+</button>
           <button onClick={()=>setShowCatMenu(true)} title="Kategorie wählen" style={{background:t.modeSwitchBg,border:`1px solid ${t.modeSwitchBorder}`,borderRadius:18,padding:"5px 11px",cursor:"pointer",fontSize:15}}>{currentIcon}</button>
           <UserMenu user={user} dark={dark} setDark={setDark} t={t} onLogout={onLogout}/>
         </div>
@@ -2113,6 +2347,31 @@ function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
             ))}
         </SwipeableSheet>
       )}
+      {showAdd&&!addCat&&(
+        <SwipeableSheet onClose={()=>setShowAdd(false)} t={t} zIndex={350}>
+          <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:16,fontWeight:700,color:t.title,marginBottom:6,textAlign:"center"}}>{isRatings?"Was möchtest du bewerten?":"Wofür ist dein Vorschlag?"}</div>
+          <div style={{fontSize:12,color:t.sub,textAlign:"center",marginBottom:16}}>Wähle die Kategorie</div>
+          {CATEGORY_GROUPS.map(g=>({...g,items:g.cats.filter(c=>activeCats.some(a=>a.id===c)).map(c=>activeCats.find(a=>a.id===c))})).filter(g=>g.items.length>0).map(sec=>(
+            <div key={sec.id} style={{marginBottom:10}}>
+              <div style={{fontSize:11,fontWeight:700,color:t.sub,margin:"4px 2px 6px",fontFamily:"'Space Grotesk',sans-serif"}}>{sec.icon} {sec.label}</div>
+              {sec.items.map(c=>(
+                <button key={c.id} onClick={()=>setAddCat(c)}
+                  style={{display:"flex",alignItems:"center",gap:16,width:"100%",padding:"14px 16px",marginBottom:8,background:t.innerCard,borderRadius:12,border:`1.5px solid ${t.cardBorder}`,cursor:"pointer",textAlign:"left"}}>
+                  <span style={{fontSize:24}}>{c.icon}</span>
+                  <span style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:15,color:t.title,flex:1}}>{c.label}</span>
+                  <span style={{fontSize:16,color:t.tick}}>›</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </SwipeableSheet>
+      )}
+      {showAdd&&addCat&&(
+        <GlobalAddSheet cat={addCat} user={user} isRatings={isRatings} t={t}
+          onClose={()=>{setAddCat(null);setShowAdd(false);}}
+          onSaved={()=>{setAddCat(null);setShowAdd(false);setLoaded(false);setReloadKey(k=>k+1);}}/>
+      )}
+      {detail&&<GlobalDetailSheet entry={detail} isRatings={isRatings} t={t} onClose={()=>setDetail(null)}/>}
       <div style={{padding:"16px 16px 40px"}}>
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Suchen…"
           style={{width:"100%",padding:"11px 14px",borderRadius:12,fontSize:14,border:`1.5px solid ${t.inputBorder}`,outline:"none",background:t.inputBg,color:t.inputColor,marginBottom:10}}/>
@@ -2154,7 +2413,7 @@ function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
           </div>
         )}
         {loaded&&items.map(x=>(
-          <div key={x.cat.id+"_"+x.item.id} style={{display:"flex",alignItems:"center",gap:12,background:t.card,borderRadius:14,border:`1px solid ${t.cardBorder}`,padding:"13px 14px",marginBottom:9,boxShadow:`0 1px 6px ${t.cardShadow}`}}>
+          <div key={x.cat.id+"_"+x.item.id} onClick={()=>setDetail(x)} style={{display:"flex",alignItems:"center",gap:12,background:t.card,borderRadius:14,border:`1px solid ${t.cardBorder}`,padding:"13px 14px",marginBottom:9,boxShadow:`0 1px 6px ${t.cardShadow}`,cursor:"pointer"}}>
             <span style={{fontSize:24}}>{x.cat.icon}</span>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:14.5,fontWeight:600,color:t.title,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{x.item.name}</div>
