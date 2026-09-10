@@ -97,6 +97,7 @@ const BOOK_GENRES=["Roman","Krimi","Thriller","Fantasy","Science-Fiction","Histo
 const CAFE_TYPES=["Café","Rösterei-Café","Bäckerei / Konditorei","Frühstück / Brunch","Eiscafé","Teehaus","Andere"];
 const BAR_TYPES=["Cocktailbar","Pub / Kneipe","Weinbar","Biergarten","Rooftop-Bar","Sportsbar","Shisha-Bar","Club","Andere"];
 const ICE_TYPES=["Eisdiele","Eiscafé","Frozen Yogurt","Softeis","Veganes Eis","Andere"];
+const DELIVERY_TYPES=["Pizza","Burger","Sushi","Asiatisch","Italienisch","Döner / Türkisch","Indisch","Vietnamesisch","Amerikanisch","Vegetarisch / Vegan","Andere"];
 const BEER_TYPES=["Pils","Helles","Weizen","Kölsch","Alt","Lager","IPA","Pale Ale","Stout / Porter","Bock","Radler","Alkoholfrei","Andere"];
 const WINE_TYPES=["Rotwein","Weißwein","Rosé","Sekt / Schaumwein","Champagner","Riesling","Spätburgunder","Merlot","Chardonnay","Sauvignon Blanc","Trocken","Halbtrocken","Lieblich","Andere"];
 const TEA_TYPES=["Schwarzer Tee","Grüner Tee","Kräutertee","Früchtetee","Weißer Tee","Oolong","Chai","Rooibos","Eistee","Andere"];
@@ -134,9 +135,10 @@ const CATEGORY_DEFS={
   cafe:{icon:"🍰",label:"Cafés"},
   bar:{icon:"🍹",label:"Bars"},
   icecream:{icon:"🍦",label:"Eisdielen"},
+  delivery:{icon:"🛵",label:"Lieferservices"},
 };
 const CATEGORY_GROUPS=[
-  {id:"lokal",icon:"📍",label:"Lokalitäten",cats:["restaurant","cafe","bar","icecream"]},
+  {id:"lokal",icon:"📍",label:"Lokalitäten",cats:["restaurant","cafe","bar","icecream","delivery"]},
   {id:"unterhaltung",icon:"🎭",label:"Unterhaltung",cats:["film","serie","book","audiobook"]},
   {id:"spirituosen",icon:"🥃",label:"Spirituosen",cats:["whisky","gin","rum","vodka"]},
   {id:"genuss",icon:"😋",label:"Genuss",cats:["coffee","beer","wine","tea","matcha"]},
@@ -284,6 +286,17 @@ const ICE_CONFIG={
   light:{headerBg:"#0c161c",headerSub:"#6e94a8",accent:"#2c7a9e",navActive:"#226180",btn:"#226180",btnColor:"#ffffff",chipOn:"#226180",chipOnColor:"#ffffff",filterOn:"#226180",filterOnColor:"#ffffff",toast:"#226180",toastColor:"#ffffff",suggAccent:"#226180"},
   dark:{headerBg:"#071018",headerSub:"#4e7488",accent:"#62b0d8",navActive:"#62b0d8",btn:"#62b0d8",btnColor:"#111110",chipOn:"#62b0d8",chipOnColor:"#111110",filterOn:"#62b0d8",filterOnColor:"#111110",toast:"#62b0d8",toastColor:"#111110",suggAccent:"#62b0d8"},
 };
+const DELIVERY_CONFIG={
+  fbBase:"deliveries",fbSugg:"delivery_suggestions",icon:"🛵",label:"Lieferservice Führer",
+  field1Label:"Stadt / Ort",field1Placeholder:"z.B. Köln",field1Key:"field1",
+  field1FilterLabel:"Alle Orte",typeFilterLabel:"Alle Küchen",genreOptions:DELIVERY_TYPES,
+  starsLabel:"⭐ Gesamtwertung",
+  crit1Label:"🍜 Essensqualität",crit2Label:"🚀 Lieferzeit / Zuverlässigkeit",crit1Short:"🍜 Essen",crit2Short:"🚀 Lieferzeit",
+  namePlaceholder:"z.B. Pizza Roma Lieferdienst",saveToast:"✅ Lieferservice gespeichert!",
+  emptyIcon:"🛵",emptyText:"Noch keine Lieferservices",emptySuggText:"Noch keine Vorschläge",
+  addTitle:"Lieferservice hinzufügen",addSuggTitle:"Lieferservice Vorschlag",suggListTitle:"Lieferservice Vorschläge",listLabel:"Lieferservice",
+  suggHint:"💡 Noch nicht bestellt — als Idee für den nächsten Abend.",
+};
 const BEER_CONFIG={
   fbBase:"beers",fbSugg:"beer_suggestions",icon:"🍺",label:"Bier Führer",
   field1Label:"Brauerei / Herkunft",field1Placeholder:"z.B. Gaffel, Köln",field1Key:"field1",
@@ -334,6 +347,7 @@ const ALL_CATS=[
   {id:"cafe",icon:"🍰",label:"Cafés",base:"cafes",sugg:"cafe_suggestions",kind:"media",cfg:CAFE_CONFIG},
   {id:"bar",icon:"🍹",label:"Bars",base:"bars",sugg:"bar_suggestions",kind:"media",cfg:BAR_CONFIG},
   {id:"icecream",icon:"🍦",label:"Eisdielen",base:"icecreams",sugg:"icecream_suggestions",kind:"media",cfg:ICE_CONFIG},
+  {id:"delivery",icon:"🛵",label:"Lieferservices",base:"deliveries",sugg:"delivery_suggestions",kind:"media",cfg:DELIVERY_CONFIG},
   {id:"film",icon:"🎬",label:"Filme",base:"movies",sugg:"movie_suggestions",kind:"media",cfg:FILM_CONFIG},
   {id:"serie",icon:"📺",label:"Serien",base:"series",sugg:"serie_suggestions",kind:"media",cfg:SERIE_CONFIG},
   {id:"book",icon:"📚",label:"Bücher",base:"books",sugg:"book_suggestions",kind:"media",cfg:BOOK_CONFIG},
@@ -621,7 +635,7 @@ function GroupsOverview({user,groups,onOpen,onLogout,dark,setDark,t,inviteMsg,on
   const [view,setView]=useState("list");
   const [topicF,setTopicF]=useState("");
   const [sortBy,setSortBy]=useState("name");
-  const [form,setForm]=useState({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,beer:false,wine:false,tea:false,matcha:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false}});
+  const [form,setForm]=useState({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,beer:false,wine:false,tea:false,matcha:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false,delivery:false}});
   const [error,setError]=useState("");
   const [saving,setSaving]=useState(false);
   const my=groups.filter(g=>g.members&&g.members[user]);
@@ -638,7 +652,7 @@ function GroupsOverview({user,groups,onOpen,onLogout,dark,setDark,t,inviteMsg,on
       const id=Date.now().toString();
       const categories=Object.fromEntries(Object.entries(form.categories).filter(([,v])=>v));
       await db.ref("groups/"+id).set({id,name:form.name.trim(),topic:form.topic.trim(),categories,members:{[user]:"admin"},createdBy:user,createdAt:Date.now()});
-      setForm({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,beer:false,wine:false,tea:false,matcha:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false}});
+      setForm({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,beer:false,wine:false,tea:false,matcha:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false,delivery:false}});
       setView("list");
     }catch{setError("Fehler beim Erstellen.");}
     setSaving(false);
@@ -1855,14 +1869,14 @@ function MasterDashboard({onClose,t}){
     const load=async()=>{
       try{
         const get=path=>new Promise((res,rej)=>db.ref(path).once("value",s=>res(s.val()),rej));
-        const [users,groups,restaurants,whiskies,movies,series,coffees,beers,wines,teas,matchas,gins,rums,vodkas,books,audiobooks,cafes,barsD,ices,catReqs,sugg,wSugg,mSugg,sSugg,cSugg,beSugg,wiSugg,teSugg,maSugg,gSugg,rSugg,vSugg,bSugg,aSugg,cafSugg,barSugg,iceSugg]=await Promise.all([
-          get("users"),get("groups"),get("restaurants"),get("whiskies"),get("movies"),get("series"),get("coffees"),get("beers"),get("wines"),get("teas"),get("matchas"),get("gins"),get("rums"),get("vodkas"),get("books"),get("audiobooks"),get("cafes"),get("bars"),get("icecreams"),get("category_requests"),
-          get("suggestions"),get("whisky_suggestions"),get("movie_suggestions"),get("serie_suggestions"),get("coffee_suggestions"),get("beer_suggestions"),get("wine_suggestions"),get("tea_suggestions"),get("matcha_suggestions"),get("gin_suggestions"),get("rum_suggestions"),get("vodka_suggestions"),get("book_suggestions"),get("audiobook_suggestions"),get("cafe_suggestions"),get("bar_suggestions"),get("icecream_suggestions"),
+        const [users,groups,restaurants,whiskies,movies,series,coffees,beers,wines,teas,matchas,gins,rums,vodkas,books,audiobooks,cafes,barsD,ices,deliveries,catReqs,sugg,wSugg,mSugg,sSugg,cSugg,beSugg,wiSugg,teSugg,maSugg,gSugg,rSugg,vSugg,bSugg,aSugg,cafSugg,barSugg,iceSugg,delSugg]=await Promise.all([
+          get("users"),get("groups"),get("restaurants"),get("whiskies"),get("movies"),get("series"),get("coffees"),get("beers"),get("wines"),get("teas"),get("matchas"),get("gins"),get("rums"),get("vodkas"),get("books"),get("audiobooks"),get("cafes"),get("bars"),get("icecreams"),get("deliveries"),get("category_requests"),
+          get("suggestions"),get("whisky_suggestions"),get("movie_suggestions"),get("serie_suggestions"),get("coffee_suggestions"),get("beer_suggestions"),get("wine_suggestions"),get("tea_suggestions"),get("matcha_suggestions"),get("gin_suggestions"),get("rum_suggestions"),get("vodka_suggestions"),get("book_suggestions"),get("audiobook_suggestions"),get("cafe_suggestions"),get("bar_suggestions"),get("icecream_suggestions"),get("delivery_suggestions"),
         ]);
         if(cancelled)return;
         const userCount=users?Object.keys(users).length:0;
         const groupCount=groups?Object.keys(groups).length:0;
-        const r=countRatings(restaurants),w=countRatings(whiskies),m=countRatings(movies),se=countRatings(series),co=countRatings(coffees),be=countRatings(beers),wi=countRatings(wines),te=countRatings(teas),ma=countRatings(matchas),gi=countRatings(gins),ru=countRatings(rums),vo=countRatings(vodkas),bo=countRatings(books),au=countRatings(audiobooks),ca=countRatings(cafes),ba=countRatings(barsD),ic=countRatings(ices);
+        const r=countRatings(restaurants),w=countRatings(whiskies),m=countRatings(movies),se=countRatings(series),co=countRatings(coffees),be=countRatings(beers),wi=countRatings(wines),te=countRatings(teas),ma=countRatings(matchas),gi=countRatings(gins),ru=countRatings(rums),vo=countRatings(vodkas),bo=countRatings(books),au=countRatings(audiobooks),ca=countRatings(cafes),ba=countRatings(barsD),ic=countRatings(ices),de=countRatings(deliveries);
         const cnt=o=>o?Object.keys(o).length:0;
         const catRequests=Object.values(catReqs||{}).map(r=>{
           const us=r.users||{};
@@ -1875,6 +1889,7 @@ function MasterDashboard({onClose,t}){
             {icon:"🍰",label:"Cafés",entries:ca.entries,ratings:ca.ratings,sugg:cnt(cafSugg),color:"#a04a6e"},
             {icon:"🍹",label:"Bars",entries:ba.entries,ratings:ba.ratings,sugg:cnt(barSugg),color:"#5a4290"},
             {icon:"🍦",label:"Eisdielen",entries:ic.entries,ratings:ic.ratings,sugg:cnt(iceSugg),color:"#2c7a9e"},
+            {icon:"🛵",label:"Lieferservices",entries:de.entries,ratings:de.ratings,sugg:cnt(delSugg),color:"#b0522e"},
             {icon:"🎬",label:"Filme",entries:m.entries,ratings:m.ratings,sugg:cnt(mSugg),color:"#a8364e"},
             {icon:"📺",label:"Serien",entries:se.entries,ratings:se.ratings,sugg:cnt(sSugg),color:"#3a5a9e"},
             {icon:"📚",label:"Bücher",entries:bo.entries,ratings:bo.ratings,sugg:cnt(bSugg),color:"#8a5230"},
@@ -1889,8 +1904,8 @@ function MasterDashboard({onClose,t}){
             {icon:"🫖",label:"Tee",entries:te.entries,ratings:te.ratings,sugg:cnt(teSugg),color:"#5a7a3e"},
             {icon:"🍵",label:"Matcha",entries:ma.entries,ratings:ma.ratings,sugg:cnt(maSugg),color:"#3e7a4a"},
           ],
-          totalEntries:r.entries+w.entries+m.entries+se.entries+co.entries+be.entries+wi.entries+te.entries+ma.entries+gi.entries+ru.entries+vo.entries+bo.entries+au.entries+ca.entries+ba.entries+ic.entries,
-          totalRatings:r.ratings+w.ratings+m.ratings+se.ratings+co.ratings+be.ratings+wi.ratings+te.ratings+ma.ratings+gi.ratings+ru.ratings+vo.ratings+bo.ratings+au.ratings+ca.ratings+ba.ratings+ic.ratings,
+          totalEntries:r.entries+w.entries+m.entries+se.entries+co.entries+be.entries+wi.entries+te.entries+ma.entries+gi.entries+ru.entries+vo.entries+bo.entries+au.entries+ca.entries+ba.entries+ic.entries+de.entries,
+          totalRatings:r.ratings+w.ratings+m.ratings+se.ratings+co.ratings+be.ratings+wi.ratings+te.ratings+ma.ratings+gi.ratings+ru.ratings+vo.ratings+bo.ratings+au.ratings+ca.ratings+ba.ratings+ic.ratings+de.ratings,
         });
       }catch{if(!cancelled)setStats({error:true});}
     };
@@ -2539,6 +2554,7 @@ function App(){
   else if(mode==="cafe")content=<MediaApp {...shared} config={CAFE_CONFIG}/>;
   else if(mode==="bar")content=<MediaApp {...shared} config={BAR_CONFIG}/>;
   else if(mode==="icecream")content=<MediaApp {...shared} config={ICE_CONFIG}/>;
+  else if(mode==="delivery")content=<MediaApp {...shared} config={DELIVERY_CONFIG}/>;
   else if(mode&&mode.startsWith("c:")){
     const cat=Object.values(activeGroup.custom||{}).find(c=>c.id===mode.slice(2));
     content=cat?<MediaApp {...shared} config={customConfig(cat)}/>:<div style={{padding:40,textAlign:"center",color:t.sub}}>Kategorie nicht gefunden.</div>;
