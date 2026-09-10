@@ -14,11 +14,25 @@ was später im Store im Weg steht.
 | Thema | Entscheidung | Status |
 |---|---|---|
 | Datenbank | Firebase bleibt (Realtime Database, Region Europa) | entschieden |
-| Weg zur nativen App | Capacitor (Web-App in nativer Hülle) | Empfehlung, noch zu bestätigen |
+| Weg zur nativen App | Capacitor (Web-App in nativer Hülle) | entschieden |
 | Build-Werkzeug | Vite + React, kein Babel mehr im Browser | entschieden |
-| Mac für iOS-Builds verfügbar? | – | offen |
-| Veröffentlichung als Firma oder Privatperson? | – | offen |
-| Dürfen Fremde später eigene Gruppen gründen? | – | offen |
+| Mac für iOS-Builds | vorhanden, iOS-Builds laufen lokal über Xcode | entschieden |
+| Veröffentlichung als Firma oder Privatperson? | Tendenz: kleine Selbständigkeit rund um die App | offen, Entscheidung vor Phase 4 |
+| Dürfen Fremde eigene Gruppen gründen? | vorerst nicht; später evtl. als Pro-Funktion gegen Bezahlung | offen, Entscheidung vor Phase 3 |
+
+### Folgen dieser Entscheidungen
+
+- **Selbständigkeit:** Für die Beta (Phase 4) reicht ein privates Entwicklerkonto.
+  Apple und Google erlauben später die Übertragung der App auf ein Firmenkonto.
+  Ein Firmenkonto bei Apple braucht eine eingetragene Firma und eine D-U-N-S-Nummer,
+  das dauert Wochen und sollte früh beantragt werden, sobald die Entscheidung steht.
+- **Pro-Funktionen:** Bezahlte Funktionen in der App laufen über In-App-Käufe der
+  Stores (Apple und Google behalten 15–30 %). Das braucht Steuer- und Bankdaten im
+  Entwicklerkonto und ist ein Grund mehr für eine saubere Gewerbe-Entscheidung.
+  Technisch: Das Nutzermodell bekommt ab Phase 0 ein Feld für die Berechtigungsstufe
+  (z. B. `plan: "free" | "pro"`), damit Funktionen später sauber freigeschaltet
+  werden können. Gruppen-Gründung bleibt bis dahin auf bekannte Nutzer beschränkt.
+- **Kein Cloud-Build nötig:** Der Kostenpunkt „Cloud-Builds für iOS" entfällt.
 
 ## Leitplanken für die laufende Arbeit
 
@@ -89,7 +103,7 @@ Ziel: Alles, was die Stores verlangen und was Fremde brauchen.
 
 - [ ] Apple Developer Program (99 USD/Jahr)
 - [ ] Google Play Console (25 USD einmalig, Identitätsprüfung)
-- [ ] iOS-Builds: Mac mit Xcode oder Cloud-Build-Dienst
+- [ ] iOS-Builds auf dem Mac mit Xcode einrichten
 - [ ] TestFlight-Beta mit dem Freundeskreis
 - [ ] Google: geschlossener Test mit mindestens 12 Testern über 14 Tage
       (Pflicht für neue Privatkonten)
@@ -109,4 +123,4 @@ Ziel: Alles, was die Stores verlangen und was Fremde brauchen.
 | Apple Developer Program | 99 USD pro Jahr |
 | Google Play Console | 25 USD einmalig |
 | Firebase | kostenlos bis zu spürbarer Nutzung |
-| Cloud-Builds für iOS (ohne Mac) | wenige Euro pro Monat, bei Bedarf |
+| In-App-Käufe (falls Pro-Funktionen) | 15–30 % Provision an die Stores |
