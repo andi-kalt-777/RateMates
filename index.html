@@ -1769,41 +1769,6 @@ function MediaApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,i
   );
 }
 
-// SEED: Account "Andi" + Gruppen "Montagabend" und "The Tasters"
-async function seedData(){
-  try{
-    const flag=await new Promise((res,rej)=>db.ref("_seeded").once("value",res,rej));
-    if(flag.val())return;
-    // Benutzer anlegen (falls nicht vorhanden)
-    const ensureUser=async(name,pw)=>{
-      const snap=await new Promise((res,rej)=>db.ref("users/"+name).once("value",res,rej));
-      if(!snap.val()){
-        const h=await hashPw(name,pw);
-        await db.ref("users/"+name).set({pwHash:h,createdAt:Date.now(),seeded:true});
-      }
-    };
-    await ensureUser("Andi","govfUr-cuwzax-necmu8");
-    // Jupp und Kashish: Platzhalter-Konten, damit sie zu Gruppen hinzugefügt werden können.
-    // Sie können sich später mit ihrem gewünschten Passwort NICHT überschreiben — daher
-    // legen wir sie mit einem Standard-Startpasswort an, das sie kennen sollten.
-    await ensureUser("Jupp","willkommen");
-    await ensureUser("Kashish","willkommen");
-    // Gruppe Montagabend: alle vier Kategorien, Mitglieder Andi (admin) + Jupp
-    const g1=await new Promise((res,rej)=>db.ref("groups").orderByChild("name").equalTo("Montagabend").once("value",res,rej));
-    if(!g1.val()){
-      const id="seed_montagabend";
-      await db.ref("groups/"+id).set({id,name:"Montagabend",topic:"Genuss",categories:{restaurant:true,whisky:true,film:true,serie:true},members:{Andi:"admin",Jupp:"member"},createdBy:"Andi",createdAt:Date.now()});
-    }
-    // Gruppe The Tasters: nur Restaurant, Mitglieder Andi (admin) + Kashish
-    const g2=await new Promise((res,rej)=>db.ref("groups").orderByChild("name").equalTo("The Tasters").once("value",res,rej));
-    if(!g2.val()){
-      const id="seed_tasters";
-      await db.ref("groups/"+id).set({id,name:"The Tasters",topic:"Genuss",categories:{restaurant:true},members:{Andi:"admin",Kashish:"member"},createdBy:"Andi",createdAt:Date.now()});
-    }
-    await db.ref("_seeded").set(true);
-  }catch(e){console.warn("Seed übersprungen:",e);}
-}
-
 // Passwort ändern (für alle Benutzer)
 function AccountSheet({user,onClose,t}){
   const [oldPw,setOldPw]=useState("");
@@ -2470,13 +2435,11 @@ function App(){
   const [activeGroupId,setActiveGroupId]=useState(null);
   const [mode,setMode]=useState(null);
   const [showSettings,setShowSettings]=useState(false);
-  const [seedDone,setSeedDone]=useState(false);
   const [pendingInvite,setPendingInvite]=useState(readInviteFromUrl());
   const [page,setPage]=useState("home");
   const [inviteMsg,setInviteMsg]=useState("");
   const t=dark?DARK:LIGHT;
 
-  useEffect(()=>{seedData().finally(()=>setSeedDone(true));},[]);
   useEffect(()=>{
     let ref;try{ref=db.ref("groups");ref.on("value",snap=>{const d=snap.val();setGroups(d?Object.values(d):[]);setGroupsLoaded(true);},()=>setGroupsLoaded(true));}catch{setGroupsLoaded(true);}
     const tm=setTimeout(()=>setGroupsLoaded(true),5000);return()=>{ref&&ref.off();clearTimeout(tm);};
@@ -2511,7 +2474,7 @@ function App(){
     }
   },[activeGroupId,groups]);
 
-  if(!seedDone||!groupsLoaded){
+  if(!groupsLoaded){
     return(<div style={{minHeight:"100vh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}><div style={{fontSize:48}}>🍽️</div><div style={{fontFamily:"'Space Grotesk',sans-serif",color:t.sub,fontSize:14}}>Lade…</div></div>);
   }
   if(!user)return <LoginScreen onLogin={setUser} invitePending={!!pendingInvite}/>;
