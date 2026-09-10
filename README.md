@@ -25,4 +25,4 @@ npm run serve    # lokale Vorschau auf http://localhost:8000
 Ein Push auf `main` geht automatisch live.
 
 `CLAUDE.md` enthält die Projektkonventionen für die Arbeit mit Claude Code,
-`UMZUG.md` die Einrichtungsanleitung.
+`UMZUG.md` die Einrichtungsanleitung, `ROADMAP.md` den Fahrplan zur Store-App.

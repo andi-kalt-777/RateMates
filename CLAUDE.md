@@ -68,8 +68,17 @@ wird eine vergessen, fehlt sie stillschweigend an einer Stelle der Oberfläche:
 - Keine Behauptungen ins Blaue. Wenn etwas unklar ist, lieber nachsehen oder sagen,
   dass du es nicht sicher weißt.
 
+## Langfristiges Ziel
+
+RateMates soll als native App in den App Store und den Play Store. Der Weg dorthin
+steht in `ROADMAP.md` — vor jeder größeren Änderung dort nachsehen, in welcher
+Phase wir sind und welche Leitplanken gelten. Aktuell: **Phase 0** (Sicherheit).
+Solange die App eine Einzeldatei ist, keine neuen Funktionen hineinbauen, nur
+Sicherheitsarbeit; der Umbau auf Vite folgt in Phase 1.
+
 ## Offene Themen
 
 - Obergruppe 🌿 Freizeit existiert, ist aber noch leer.
-- Vor einer Veröffentlichung muss die Sicherheit gehärtet werden: Firebase-Regeln,
-  Passwort-Handling (aktuell SHA-256 im Client), Seed-Konten mit Startpasswort.
+- Sicherheit (Phase 0 der Roadmap): Firebase-Regeln stehen auf „jeder darf alles",
+  Passwort-Handling ist SHA-256 im Client, Seed-Konten mit Startpasswort stehen im
+  öffentlichen Repo.
