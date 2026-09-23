@@ -1,0 +1,236 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "users": {
+      "$name": {
+        ".read": "auth != null && data.child('uid').val() === auth.uid",
+        "uid": { ".read": "auth != null" },
+        "createdAt": { ".read": "auth != null" },
+        ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid && root.child('names').child($name.toLowerCase()).val() === $name) || (data.exists() && !data.child('uid').exists() && data.child('pwHash').isString() && newData.child('uid').val() === auth.uid && newData.child('pwHash').val() === data.child('pwHash').val()) || (data.child('uid').val() === auth.uid && (!newData.exists() || newData.child('uid').val() === auth.uid)))"
+      }
+    },
+
+    "uids": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && $uid === auth.uid && (!newData.exists() || (newData.isString() && root.child('users').child(newData.val()).child('uid').val() === auth.uid))"
+      }
+    },
+
+    "names": {
+      "$key": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() || !root.child('users').child(data.val()).exists() || root.child('users').child(data.val()).child('uid').val() === auth.uid)",
+        ".validate": "newData.isString() && newData.val().toLowerCase() === $key"
+      }
+    },
+
+    "groups": {
+      ".read": "auth != null",
+      "$gid": {
+        ".write": "auth != null && root.child('uids').hasChild(auth.uid) && ((!data.exists() && newData.child('members').child(root.child('uids').child(auth.uid).val()).val() === 'admin') || data.child('members').child(root.child('uids').child(auth.uid).val()).val() === 'admin')",
+        "members": {
+          "$member": {
+            ".write": "auth != null && root.child('uids').child(auth.uid).val() === $member && !data.exists() && newData.val() === 'member'"
+          }
+        }
+      }
+    },
+
+    "category_requests": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "restaurants": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "whiskies": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "whisky_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "movies": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "movie_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "series": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "serie_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "coffees": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "coffee_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "gins": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "gin_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "rums": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "rum_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "vodkas": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "vodka_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "books": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "book_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "audiobooks": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "audiobook_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "cafes": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "cafe_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "bars": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "bar_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "icecreams": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "icecream_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "deliveries": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "delivery_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "beers": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "beer_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "wines": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "wine_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "teas": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "tea_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "matchas": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && (!data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    },
+    "matcha_suggestions": { ".read": "auth != null", ".write": "auth != null" },
+
+    "$custom": {
+      ".read": "auth != null && $custom.matches(/^custom_[A-Za-z0-9_-]+$/)",
+      "$id": {
+        ".write": "auth != null && $custom.matches(/^custom_[A-Za-z0-9_-]+$/) && ($custom.endsWith('_sugg') || !data.exists() || !newData.exists())",
+        "$field": { ".write": "auth != null && $custom.matches(/^custom_[A-Za-z0-9_-]+$/) && $field !== 'ratings'" },
+        "ratings": { "$user": { ".write": "auth != null && $custom.matches(/^custom_[A-Za-z0-9_-]+$/) && root.child('users').child($user).child('uid').val() === auth.uid" } }
+      }
+    }
+  }
+}

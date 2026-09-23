@@ -10,6 +10,7 @@
 <script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f1f4fb;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
@@ -27,6 +28,7 @@ select option{background:white;color:#1b1713}
 <script>
 // FIREBASE KONFIGURATION EINFUEGEN
 const firebaseConfig={
+  apiKey: "AIzaSyALr6jetmhTYj9XIGZQ7aBs_gxAFLnt4x4",
   authDomain: "montagabendrestaurants.firebaseapp.com",
   databaseURL: "https://montagabendrestaurants-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "montagabendrestaurants",
@@ -37,6 +39,7 @@ const firebaseConfig={
 };
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
+const auth=firebase.auth();
 </script>
 
 <script type="text/babel">
@@ -51,6 +54,44 @@ async function sha256(str){
 }
 const hashPw=(user,pw)=>sha256(user.toLowerCase()+":"+pw);
 const validUsername=n=>/^[A-Za-z0-9 _\-]{2,20}$/.test(n);
+
+// Firebase Authentication: Benutzernamen werden auf technische E-Mail-Adressen abgebildet
+// (z. B. "Gabi kalthoefer" -> gabi.kalthoefer@ratemates.invalid). Die Adressen existieren
+// nicht, Firebase braucht sie nur als Kennung. Der Benutzername bleibt überall der Schlüssel.
+// Datenbank: users/<Name>/uid, uids/<uid> = Name, names/<name klein> = Name (Eindeutigkeit).
+const authEmail=n=>n.trim().toLowerCase().replace(/ /g,".")+"@ratemates.invalid";
+const nameKey=n=>n.trim().toLowerCase();
+const readOnce=path=>new Promise((res,rej)=>db.ref(path).once("value",s=>res(s.val()),rej));
+const loginError=msg=>Object.assign(new Error(msg),{msg});
+const NO_ACCOUNT_CODES=["auth/user-not-found","auth/invalid-credential","auth/invalid-login-credentials","auth/wrong-password"];
+const authErrorMsg=(e,fallback)=>{
+  const c=(e&&e.code)||"";
+  if(c==="auth/network-request-failed")return "Verbindungsfehler. Bitte erneut versuchen.";
+  if(c==="auth/too-many-requests")return "Zu viele Versuche. Bitte kurz warten.";
+  if(c==="auth/operation-not-allowed"||c==="auth/configuration-not-found")return "Anmeldung per Passwort ist in Firebase nicht freigeschaltet.";
+  if(c==="auth/weak-password")return "Passwort zu kurz (mindestens 6 Zeichen).";
+  return fallback;
+};
+// Nach erfolgreicher Firebase-Anmeldung: Verknüpfung uid <-> Benutzername sicherstellen.
+// Ein altes Konto (nur pwHash, noch keine uid) wird dabei umgezogen. Die Datenbankregel
+// lässt das nur zu, wenn der mitgeschickte Hash zum gespeicherten passt.
+async function completeLogin(n,pw){
+  const uid=auth.currentUser.uid;
+  const linked=await readOnce("users/"+n+"/uid");
+  if(linked===null){
+    const created=await readOnce("users/"+n+"/createdAt");
+    if(created===null)throw loginError("Benutzer nicht gefunden.");
+    const h=await hashPw(n,pw);
+    try{await db.ref("users/"+n).update({uid,pwHash:h});}
+    catch{throw loginError("Falsches Passwort.");}
+  }else if(linked!==uid){
+    throw loginError("Dieser Benutzername gehört zu einem anderen Konto.");
+  }
+  await db.ref("uids/"+uid).set(n).catch(()=>{});
+  await db.ref("names/"+nameKey(n)).set(n).catch(()=>{});
+  await db.ref("users/"+n+"/pwHash").remove().catch(()=>{});
+  await db.ref("users/"+n+"/seeded").remove().catch(()=>{});
+}
 
 // Daten-Helpers
 function normalizeRest(r){
@@ -570,17 +611,39 @@ function LoginScreen({onLogin,invitePending}){
   const [busy,setBusy]=useState(false);
   const inputStyle=err=>({width:"100%",padding:"13px 16px",borderRadius:12,fontSize:15,border:`1.5px solid ${err?"#c03028":"#dfdcd6"}`,outline:"none",color:"#1b1713",marginBottom:12,textAlign:"center"});
   const doLogin=async()=>{
-    if(!name.trim()||!pw){setError("Bitte Name und Passwort eingeben.");return;}
+    const n=name.trim();
+    if(!n||!pw){setError("Bitte Name und Passwort eingeben.");return;}
     setBusy(true);setError("");
+    let fresh=false;
     try{
-      const snap=await new Promise((res,rej)=>db.ref("users/"+name.trim()).once("value",res,rej));
-      const u=snap.val();
-      if(!u){setError("Benutzer nicht gefunden.");setBusy(false);return;}
-      const h=await hashPw(name.trim(),pw);
-      if(h!==u.pwHash){setError("Falsches Passwort.");setBusy(false);return;}
-      localStorage.setItem("rmg_user",name.trim());
-      onLogin(name.trim());
-    }catch(e){setError("Verbindungsfehler. Bitte erneut versuchen.");}
+      const email=authEmail(n);
+      try{
+        await auth.signInWithEmailAndPassword(email,pw);
+      }catch(e){
+        if(!NO_ACCOUNT_CODES.includes(e.code))throw e;
+        // Kein Firebase-Konto mit diesem Passwort: entweder ein altes Konto, das jetzt
+        // umgezogen wird, oder ein falsches Passwort. Solange der alte Hash noch lesbar
+        // ist (Übergangsphase), wird er vorab geprüft; sonst entscheidet die Datenbankregel.
+        const stored=await readOnce("users/"+n+"/pwHash").catch(()=>undefined);
+        if(stored===null){
+          const created=await readOnce("users/"+n+"/createdAt").catch(()=>null);
+          throw loginError(created?"Falsches Passwort.":"Benutzer nicht gefunden.");
+        }
+        if(stored!==undefined&&stored!==await hashPw(n,pw))throw loginError("Falsches Passwort.");
+        try{await auth.createUserWithEmailAndPassword(email,pw);fresh=true;}
+        catch(e2){
+          if(e2.code==="auth/email-already-in-use")throw loginError("Falsches Passwort.");
+          throw e2;
+        }
+      }
+      await completeLogin(n,pw);
+      localStorage.setItem("rmg_user",n);
+      onLogin(n);
+    }catch(e){
+      if(fresh)await auth.currentUser?.delete().catch(()=>{});
+      else if(auth.currentUser)await auth.signOut().catch(()=>{});
+      setError(e.msg||authErrorMsg(e,"Anmeldung fehlgeschlagen. Bitte erneut versuchen."));
+    }
     setBusy(false);
   };
   const doRegister=async()=>{
@@ -589,14 +652,28 @@ function LoginScreen({onLogin,invitePending}){
     if(pw.length<6){setError("Passwort: mindestens 6 Zeichen.");return;}
     if(pw!==pw2){setError("Passwörter stimmen nicht überein.");return;}
     setBusy(true);setError("");
+    let fresh=false;
     try{
-      const snap=await new Promise((res,rej)=>db.ref("users/"+n).once("value",res,rej));
-      if(snap.val()){setError("Dieser Name ist bereits vergeben.");setBusy(false);return;}
-      const h=await hashPw(n,pw);
-      await db.ref("users/"+n).set({pwHash:h,createdAt:Date.now()});
+      try{await auth.createUserWithEmailAndPassword(authEmail(n),pw);fresh=true;}
+      catch(e){if(e.code==="auth/email-already-in-use")throw loginError("Dieser Name ist bereits vergeben.");throw e;}
+      const uid=auth.currentUser.uid;
+      const taken=await readOnce("names/"+nameKey(n)).catch(()=>null);
+      const exists=await readOnce("users/"+n+"/createdAt").catch(()=>null);
+      if(taken||exists)throw loginError("Dieser Name ist bereits vergeben.");
+      try{
+        await db.ref("names/"+nameKey(n)).set(n);
+        await db.ref("users/"+n).set({uid,createdAt:Date.now()});
+        await db.ref("uids/"+uid).set(n);
+      }catch{
+        await db.ref("names/"+nameKey(n)).remove().catch(()=>{});
+        throw loginError("Dieser Name ist bereits vergeben.");
+      }
       localStorage.setItem("rmg_user",n);
       onLogin(n);
-    }catch(e){setError("Fehler bei der Registrierung.");}
+    }catch(e){
+      if(fresh)await auth.currentUser?.delete().catch(()=>{});
+      setError(e.msg||authErrorMsg(e,"Fehler bei der Registrierung."));
+    }
     setBusy(false);
   };
   return(
@@ -779,8 +856,8 @@ function GroupSettingsSheet({group,user,onClose,t}){
     if(!n){setMsg("Bitte Benutzernamen eingeben.");return;}
     if(group.members?.[n]){setMsg("Ist bereits Mitglied.");return;}
     try{
-      const snap=await new Promise((res,rej)=>db.ref("users/"+n).once("value",res,rej));
-      if(!snap.val()){setMsg("Benutzer \""+n+"\" existiert nicht. Er muss sich zuerst registrieren.");return;}
+      const created=await readOnce("users/"+n+"/createdAt");
+      if(!created){setMsg("Benutzer \""+n+"\" existiert nicht. Er muss sich zuerst registrieren.");return;}
       await db.ref("groups/"+group.id+"/members/"+n).set("member");
       setNewMember("");setMsg("✅ "+n+" hinzugefügt.");
     }catch{setMsg("Fehler beim Hinzufügen.");}
@@ -1783,15 +1860,16 @@ function AccountSheet({user,onClose,t}){
     if(newPw!==newPw2){setMsg("Neue Passwörter stimmen nicht überein.");return;}
     setBusy(true);setMsg("");
     try{
-      const snap=await new Promise((res,rej)=>db.ref("users/"+user).once("value",res,rej));
-      const u=snap.val();
-      const oldH=await hashPw(user,oldPw);
-      if(!u||oldH!==u.pwHash){setMsg("Aktuelles Passwort ist falsch.");setBusy(false);return;}
-      const newH=await hashPw(user,newPw);
-      await db.ref("users/"+user+"/pwHash").set(newH);
+      const cu=auth.currentUser;
+      if(!cu)throw loginError("Sitzung abgelaufen. Bitte neu anmelden.");
+      const cred=firebase.auth.EmailAuthProvider.credential(authEmail(user),oldPw);
+      try{await cu.reauthenticateWithCredential(cred);}
+      catch(e){if(NO_ACCOUNT_CODES.includes(e.code))throw loginError("Aktuelles Passwort ist falsch.");throw e;}
+      await cu.updatePassword(newPw);
+      await db.ref("users/"+user+"/pwHash").remove().catch(()=>{});
       await db.ref("users/"+user+"/seeded").remove().catch(()=>{});
       setOldPw("");setNewPw("");setNewPw2("");setMsg("✅ Passwort geändert.");
-    }catch{setMsg("Fehler beim Ändern.");}
+    }catch(e){setMsg(e.msg||authErrorMsg(e,"Fehler beim Ändern."));}
     setBusy(false);
   };
   return(
@@ -2427,8 +2505,13 @@ function clearInviteHash(){
     }
   }catch{}
 }
+function LoadingScreen({t}){
+  return(<div style={{minHeight:"100vh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}><div style={{fontSize:48}}>🍽️</div><div style={{fontFamily:"'Space Grotesk',sans-serif",color:t.sub,fontSize:14}}>Lade…</div></div>);
+}
+
 function App(){
   const [user,setUser]=useState(localStorage.getItem("rmg_user")||null);
+  const [authReady,setAuthReady]=useState(false);
   const [dark,setDark]=useState(false);
   const [groups,setGroups]=useState([]);
   const [groupsLoaded,setGroupsLoaded]=useState(false);
@@ -2440,10 +2523,18 @@ function App(){
   const [inviteMsg,setInviteMsg]=useState("");
   const t=dark?DARK:LIGHT;
 
+  // Firebase-Sitzung: ohne gültige Anmeldung zurück zum Login (auch bei altem localStorage-Stand)
+  useEffect(()=>auth.onAuthStateChanged(u=>{
+    if(!u){localStorage.removeItem("rmg_user");setUser(null);}
+    setAuthReady(true);
+  }),[]);
+
+  // Gruppen erst laden, wenn die Anmeldung steht — vorher verweigert die Datenbank den Zugriff
   useEffect(()=>{
+    if(!user||!authReady){setGroups([]);setGroupsLoaded(false);return;}
     let ref;try{ref=db.ref("groups");ref.on("value",snap=>{const d=snap.val();setGroups(d?Object.values(d):[]);setGroupsLoaded(true);},()=>setGroupsLoaded(true));}catch{setGroupsLoaded(true);}
     const tm=setTimeout(()=>setGroupsLoaded(true),5000);return()=>{ref&&ref.off();clearTimeout(tm);};
-  },[]);
+  },[user,authReady]);
 
   // Einladung verarbeiten: sobald ein eingeloggter Nutzer + Token + geladene Gruppen vorliegen
   useEffect(()=>{
@@ -2474,13 +2565,12 @@ function App(){
     }
   },[activeGroupId,groups]);
 
-  if(!groupsLoaded){
-    return(<div style={{minHeight:"100vh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}><div style={{fontSize:48}}>🍽️</div><div style={{fontFamily:"'Space Grotesk',sans-serif",color:t.sub,fontSize:14}}>Lade…</div></div>);
-  }
+  if(!authReady)return <LoadingScreen t={t}/>;
   if(!user)return <LoginScreen onLogin={setUser} invitePending={!!pendingInvite}/>;
+  if(!groupsLoaded)return <LoadingScreen t={t}/>;
 
   // Keine Gruppe gewählt: Hauptseite bzw. globale Ansichten
-  const doLogout=()=>{localStorage.removeItem("rmg_user");setUser(null);setPage("home");};
+  const doLogout=()=>{auth.signOut().catch(()=>{});localStorage.removeItem("rmg_user");setUser(null);setPage("home");};
   if(!activeGroup){
     if(page==="ratings")return <AllItemsPage type="ratings" user={user} groups={groups} dark={dark} setDark={setDark} t={t} onBack={()=>setPage("home")} onLogout={doLogout}/>;
     if(page==="suggestions")return <AllItemsPage type="suggestions" user={user} groups={groups} dark={dark} setDark={setDark} t={t} onBack={()=>setPage("home")} onLogout={doLogout}/>;

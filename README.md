@@ -24,5 +24,12 @@ npm run serve    # lokale Vorschau auf http://localhost:8000
 
 Ein Push auf `main` geht automatisch live.
 
+Die Datenbankregeln liegen in `database.rules.json` und werden getrennt
+veröffentlicht (einmalig `npm install -g firebase-tools` und `firebase login`):
+
+```bash
+firebase deploy --only database
+```
+
 `CLAUDE.md` enthält die Projektkonventionen für die Arbeit mit Claude Code,
 `UMZUG.md` die Einrichtungsanleitung, `ROADMAP.md` den Fahrplan zur Store-App.

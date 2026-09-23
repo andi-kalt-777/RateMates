@@ -53,6 +53,7 @@ const pinned = [
   "@babel/standalone@7.23.10/babel.min.js",
   "firebasejs/9.23.0/firebase-app-compat.js",
   "firebasejs/9.23.0/firebase-database-compat.js",
+  "firebasejs/9.23.0/firebase-auth-compat.js",
 ];
 const unpinned = pinned.filter((p) => !html.includes(p));
 if (unpinned.length) {
@@ -103,6 +104,30 @@ if (defsBlock && groupsBlock) {
   } else {
     ok("Alle Kategorien im Mode-Routing verdrahtet");
   }
+}
+
+// --- Datenbankregeln: jeder Firebase-Pfad braucht seinen Block ----------------
+// Ohne Eintrag in database.rules.json ist ein Pfad für alle gesperrt — die
+// Kategorie wäre dann sichtbar, aber jede Bewertung schlüge still fehl.
+try {
+  const rules = JSON.parse(
+    fs.readFileSync(path.join(__dirname, "..", "database.rules.json"), "utf8")
+  ).rules;
+  const paths = new Set(["restaurants", "suggestions", "whiskies", "whisky_suggestions"]);
+  for (const m of html.matchAll(/fb(?:Base|Sugg)\s*:\s*"(\w+)"/g)) paths.add(m[1]);
+  // Gruppeneigene Kategorien liegen unter custom_<id>; dafür steht ein $-Platzhalter
+  // in den Regeln. Ein Präfix (endet auf "_") gilt als abgedeckt, wenn es ihn gibt.
+  const hasWildcard = Object.keys(rules).some((k) => k.startsWith("$"));
+  const unruled = [...paths].filter((p) =>
+    p.endsWith("_") ? !hasWildcard : !(p in rules)
+  );
+  if (unruled.length) {
+    fail("Firebase-Pfad ohne Datenbankregel: " + unruled.join(", "));
+  } else {
+    ok(`Alle ${paths.size} Firebase-Pfade in database.rules.json abgedeckt`);
+  }
+} catch (e) {
+  fail("database.rules.json fehlt oder ist kein gültiges JSON: " + e.message);
 }
 
 console.log(

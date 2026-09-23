@@ -15,8 +15,20 @@ Antworte mit Andreas immer auf **Deutsch**.
 - **Deployment:** Push auf `main` → GitHub Pages baut automatisch.
   Live: https://andi-kalt-777.github.io/RateMates/
 - **Firebase Realtime Database**, Zugangsdaten stehen im Klartext im obersten
-  `<script>`-Block (bei dieser App-Art normal). Jede neue Kategorie braucht ihre
-  Pfade in den DB-Regeln — beim Anlegen immer erwähnen.
+  `<script>`-Block (bei dieser App-Art normal; der Web-API-Schlüssel ist ein
+  öffentlicher Projekt-Identifikator, die Zugriffskontrolle machen die Regeln).
+- **Datenbankregeln** liegen versioniert in `database.rules.json` und gehen mit
+  `firebase deploy --only database` live (Firebase CLI, Projekt in `.firebaserc`).
+  Ohne Anmeldung ist nichts lesbar. Jeder Firebase-Pfad braucht dort seinen
+  Block — `npm run check` prüft das.
+- **Login läuft über Firebase Authentication** (E-Mail/Passwort). Benutzernamen
+  werden über `authEmail()` auf technische Adressen abgebildet
+  (`gabi.kalthoefer@ratemates.invalid`), der Benutzername bleibt überall der
+  Datenbankschlüssel. Struktur: `users/<Name>/{uid,createdAt}`, `uids/<uid> = Name`,
+  `names/<name klein> = Name` (Eindeutigkeit ohne Groß/Klein). Alte Konten haben
+  noch `pwHash`; beim ersten Login zieht `completeLogin()` sie um, die Regel prüft
+  dabei den Hash. Von fremden Profilen sind nur `uid` und `createdAt` lesbar —
+  nie `users/<Name>` als Ganzes lesen.
 
 ## Nach jeder Änderung
 
@@ -30,7 +42,7 @@ npm run check     # kompiliert den Babel-Block, prüft Klammer-Balance
 ## Kategorien hinzufügen
 
 Alle Kategorien außer Restaurant und Whisky laufen generisch über `MediaApp` mit
-einem CONFIG-Objekt. Eine neue Kategorie muss an **acht** Stellen verdrahtet werden —
+einem CONFIG-Objekt. Eine neue Kategorie muss an **neun** Stellen verdrahtet werden —
 wird eine vergessen, fehlt sie stillschweigend an einer Stelle der Oberfläche:
 
 1. `CATEGORY_DEFS` — Icon und Label
@@ -41,6 +53,8 @@ wird eine vergessen, fehlt sie stillschweigend an einer Stelle der Oberfläche:
 6. Formular-Defaults im Gruppenformular (**zwei** Stellen)
 7. Mode-Routing in der App-Komponente
 8. `MasterDashboard` — Promise.all, countRatings, cats-Array, beide Summen
+9. `database.rules.json` — je ein Block für `fbBase` und `fbSugg`, danach
+   `firebase deploy --only database`
 
 ## Konventionen
 
@@ -79,6 +93,8 @@ Sicherheitsarbeit; der Umbau auf Vite folgt in Phase 1.
 ## Offene Themen
 
 - Obergruppe 🌿 Freizeit existiert, ist aber noch leer.
-- Sicherheit (Phase 0 der Roadmap): Firebase-Regeln stehen auf „jeder darf alles",
-  Passwort-Handling ist SHA-256 im Client, Seed-Konten mit Startpasswort stehen im
-  öffentlichen Repo.
+- Sicherheit (Phase 0 der Roadmap): Regeln und Firebase Auth sind seit 23.09.2026
+  live. Offen: Konto löschen aus der App heraus; nach der Übergangsphase die
+  restlichen `pwHash`-Werte nicht migrierter Konten entfernen. Bekannte Lücke:
+  wer einen Eintrag neu anlegt, kann dabei Bewertungen unter fremdem Namen
+  mitschicken (Regeln können den Inhalt beim Anlegen nicht prüfen).
