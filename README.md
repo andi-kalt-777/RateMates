@@ -31,5 +31,20 @@ veröffentlicht (einmalig `npm install -g firebase-tools` und `firebase login`):
 firebase deploy --only database
 ```
 
+## Passwort vergessen
+
+Die Anmeldung läuft über Firebase Authentication mit technischen Adressen, es
+gibt also keine Reset-Mail. Stattdessen setzt der Admin das Konto lokal zurück:
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/reset-password.ps1 -Name "Jupp"
+```
+
+Das Skript fragt verdeckt nach einem Startpasswort und schreibt nur den Hash in
+die Datenbank. War das Konto schon auf Firebase Auth umgezogen, muss vorher der
+Nutzer in der Firebase-Konsole unter Authentication → Nutzer gelöscht werden
+(das Skript nennt die Adresse). Beim nächsten Login zieht das Konto automatisch
+wieder um; das Startpasswort wird dann in der App geändert.
+
 `CLAUDE.md` enthält die Projektkonventionen für die Arbeit mit Claude Code,
 `UMZUG.md` die Einrichtungsanleitung, `ROADMAP.md` den Fahrplan zur Store-App.

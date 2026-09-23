@@ -33,7 +33,7 @@
         ".write": "auth != null && root.child('uids').hasChild(auth.uid) && ((!data.exists() && newData.child('members').child(root.child('uids').child(auth.uid).val()).val() === 'admin') || data.child('members').child(root.child('uids').child(auth.uid).val()).val() === 'admin')",
         "members": {
           "$member": {
-            ".write": "auth != null && root.child('uids').child(auth.uid).val() === $member && !data.exists() && newData.val() === 'member'"
+            ".write": "auth != null && root.child('uids').child(auth.uid).val() === $member && ((!data.exists() && newData.val() === 'member') || !newData.exists())"
           }
         }
       }

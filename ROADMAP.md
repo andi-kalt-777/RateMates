@@ -60,10 +60,10 @@ Ziel: Die App ist so abgesichert, dass sie öffentlich erreichbar sein darf.
       Namen, Gruppen nur durch Admins, Profile nur durch den Besitzer — 23.09.2026
 - [x] Regeln als Datei im Repo versionieren (`database.rules.json`), vor dem
       Scharfschalten gegen die echten Pfade getestet — 23.09.2026
-- [ ] Konto löschen aus der App heraus (Pflicht bei Apple)
-- [ ] Admin-Weg für vergessene Passwörter: die technischen Adressen können
-      keine Reset-Mails empfangen; alte Konten lassen sich noch per CLI
-      zurücksetzen, umgezogene nicht mehr
+- [x] Konto löschen aus der App heraus (Pflicht bei Apple) — 23.09.2026, im
+      Blatt „Passwort ändern"
+- [x] Admin-Weg für vergessene Passwörter: `scripts/reset-password.ps1`, Ablauf
+      in der README — 23.09.2026
 - [ ] Auftragsverarbeitungsvertrag mit Google in den Firebase-Projekteinstellungen
       akzeptieren, bevor Fremde die App nutzen
 

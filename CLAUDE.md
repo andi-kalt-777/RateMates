@@ -28,7 +28,9 @@ Antworte mit Andreas immer auf **Deutsch**.
   `names/<name klein> = Name` (Eindeutigkeit ohne Groß/Klein). Alte Konten haben
   noch `pwHash`; beim ersten Login zieht `completeLogin()` sie um, die Regel prüft
   dabei den Hash. Von fremden Profilen sind nur `uid` und `createdAt` lesbar —
-  nie `users/<Name>` als Ganzes lesen.
+  nie `users/<Name>` als Ganzes lesen. Vergessene Passwörter setzt der Admin mit
+  `scripts/reset-password.ps1` zurück (README). Konto löschen steckt in
+  `AccountSheet`; die Reihenfolge der Löschschritte ist durch die Regeln vorgegeben.
 
 ## Nach jeder Änderung
 
@@ -93,8 +95,8 @@ Sicherheitsarbeit; der Umbau auf Vite folgt in Phase 1.
 ## Offene Themen
 
 - Obergruppe 🌿 Freizeit existiert, ist aber noch leer.
-- Sicherheit (Phase 0 der Roadmap): Regeln und Firebase Auth sind seit 23.09.2026
-  live. Offen: Konto löschen aus der App heraus; nach der Übergangsphase die
-  restlichen `pwHash`-Werte nicht migrierter Konten entfernen. Bekannte Lücke:
+- Sicherheit (Phase 0 der Roadmap): Regeln, Firebase Auth und Konto löschen sind
+  seit 23.09.2026 live. Offen: nach der Übergangsphase die restlichen
+  `pwHash`-Werte nicht migrierter Konten entfernen. Bekannte Lücke:
   wer einen Eintrag neu anlegt, kann dabei Bewertungen unter fremdem Namen
   mitschicken (Regeln können den Inhalt beim Anlegen nicht prüfen).
