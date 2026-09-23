@@ -48,15 +48,24 @@ was später im Store im Weg steht.
 
 Ziel: Die App ist so abgesichert, dass sie öffentlich erreichbar sein darf.
 
-- [ ] Startpasswort ändern, Seed-Block mit Konten aus `index.html` entfernen
-- [ ] Firebase Authentication für das Login (Benutzernamen bleiben erhalten,
-      intern auf technische Adressen abgebildet)
-- [ ] Übergangsphase: alle bisherigen Nutzer setzen einmal ein neues Passwort
-- [ ] Datenbankregeln: Lesen nur angemeldet, Bewertungen nur unter eigenem
-      Namen, Gruppen nur durch Mitglieder, Profile nur durch den Besitzer
-- [ ] Regeln als Datei im Repo versionieren und vor dem Scharfschalten gegen
-      die echten Pfade testen
+- [x] Startpasswort ändern, Seed-Block mit Konten aus `index.html` entfernen
+      (10.09.2026)
+- [x] Firebase Authentication für das Login (Benutzernamen bleiben erhalten,
+      intern auf technische Adressen abgebildet) — 23.09.2026
+- [x] Übergangsphase: alte Konten ziehen beim ersten Login automatisch um, ohne
+      neues Passwort; die Regel prüft dabei den alten Hash — 23.09.2026.
+      Offen: nach einigen Wochen die `pwHash`-Werte nie eingeloggter Konten
+      entfernen.
+- [x] Datenbankregeln: Lesen nur angemeldet, Bewertungen nur unter eigenem
+      Namen, Gruppen nur durch Admins, Profile nur durch den Besitzer — 23.09.2026
+- [x] Regeln als Datei im Repo versionieren (`database.rules.json`), vor dem
+      Scharfschalten gegen die echten Pfade getestet — 23.09.2026
 - [ ] Konto löschen aus der App heraus (Pflicht bei Apple)
+- [ ] Admin-Weg für vergessene Passwörter: die technischen Adressen können
+      keine Reset-Mails empfangen; alte Konten lassen sich noch per CLI
+      zurücksetzen, umgezogene nicht mehr
+- [ ] Auftragsverarbeitungsvertrag mit Google in den Firebase-Projekteinstellungen
+      akzeptieren, bevor Fremde die App nutzen
 
 ## Phase 1 – Vom Einzel-File zum Projekt
 
