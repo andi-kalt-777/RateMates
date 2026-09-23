@@ -44,7 +44,7 @@ npm run check     # kompiliert den Babel-Block, prüft Klammer-Balance
 ## Kategorien hinzufügen
 
 Alle Kategorien außer Restaurant und Whisky laufen generisch über `MediaApp` mit
-einem CONFIG-Objekt. Eine neue Kategorie muss an **neun** Stellen verdrahtet werden —
+einem CONFIG-Objekt. Eine neue Kategorie muss an **acht** Stellen verdrahtet werden —
 wird eine vergessen, fehlt sie stillschweigend an einer Stelle der Oberfläche:
 
 1. `CATEGORY_DEFS` — Icon und Label
@@ -54,8 +54,7 @@ wird eine vergessen, fehlt sie stillschweigend an einer Stelle der Oberfläche:
 5. `ALL_CATS` — Registry für die globalen Übersichten (inkl. `cfg:`)
 6. Formular-Defaults im Gruppenformular (**zwei** Stellen)
 7. Mode-Routing in der App-Komponente
-8. `MasterDashboard` — Promise.all, countRatings, cats-Array, beide Summen
-9. `database.rules.json` — je ein Block für `fbBase` und `fbSugg`, danach
+8. `database.rules.json` — je ein Block für `fbBase` und `fbSugg`, danach
    `firebase deploy --only database`
 
 ## Konventionen
