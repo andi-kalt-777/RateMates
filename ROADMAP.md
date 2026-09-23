@@ -115,6 +115,13 @@ Ziel: Alles, was die Stores verlangen und was Fremde brauchen.
 - [ ] Onboarding für neue Nutzer ohne Vorwissen
 - [ ] Absturz- und Fehlerberichte
 - [ ] Namensprüfung: ist „RateMates" in beiden Stores und markenrechtlich frei?
+- [ ] Eigene Domain kaufen (erst nach der Namensprüfung), z. B. `ratemates.de`.
+      Damit: Firebase-Mails von `noreply@<domain>` statt
+      `noreply@montagabendrestaurants.firebaseapp.com` (Authentication →
+      Vorlagen → Domain anpassen, DNS-Einträge beim Anbieter), Links in den
+      Mails auf die eigene Domain, Support-Adresse für die Stores, feste
+      Adresse für Datenschutzerklärung und Impressum, App unter eigener
+      Domain statt `andi-kalt-777.github.io`
 - [ ] Screenshots, Store-Texte, Beschreibung, Schlagwörter
 
 ## Phase 4 – Beta über die Stores
