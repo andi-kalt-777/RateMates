@@ -93,6 +93,12 @@ Ziel: Die App fühlt sich auf dem Handy wie eine App an.
 - [ ] Android-Zurück-Taste und Tastaturverhalten
 - [ ] Push-Nachrichten (z. B. neue Bewertung in der Gruppe)
 - [ ] Einladungslinks, die direkt die App öffnen (Deep Links)
+- [ ] Anmeldung mit Google und Apple, zusätzlich zu Name/Passwort. Beides
+      zusammen: Apple verlangt „Mit Apple anmelden", sobald eine iOS-App einen
+      anderen Drittanbieter-Login bietet. Läuft in Capacitor über native
+      Plugins; die uid-Zuordnung in `uids/` ist dafür schon vorbereitet.
+      Apple-Login braucht das Entwicklerkonto aus Phase 4. Keine SMS-Zwei-Faktor
+      (Bezahltarif, Telefonnummern als zusätzliche Daten, kein Mehrwert).
 
 ## Phase 3 – Store-Reife
 
