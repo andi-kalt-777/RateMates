@@ -97,6 +97,8 @@ async function completeLogin(n,pw){
   }
   await db.ref("uids/"+uid).set(n).catch(()=>{});
   await db.ref("names/"+nameKey(n)).set(n).catch(()=>{});
+  // Anzeigename für die Anrede in Firebase-Mails (%DISPLAY_NAME%)
+  if(auth.currentUser.displayName!==n)await auth.currentUser.updateProfile({displayName:n}).catch(()=>{});
   await db.ref("users/"+n+"/pwHash").remove().catch(()=>{});
   await db.ref("users/"+n+"/seeded").remove().catch(()=>{});
 }
@@ -699,6 +701,7 @@ function LoginScreen({onLogin,invitePending}){
         await db.ref("names/"+nameKey(n)).set(n);
         await db.ref("users/"+n).set({uid,createdAt:Date.now()});
         await db.ref("uids/"+uid).set(n);
+        await auth.currentUser.updateProfile({displayName:n}).catch(()=>{});
       }catch{
         await db.ref("names/"+nameKey(n)).remove().catch(()=>{});
         throw loginError("Dieser Name ist bereits vergeben.");
