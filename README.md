@@ -33,8 +33,12 @@ firebase deploy --only database
 
 ## Passwort vergessen
 
-Die Anmeldung läuft über Firebase Authentication mit technischen Adressen, es
-gibt also keine Reset-Mail. Stattdessen setzt der Admin das Konto lokal zurück:
+Wer im Kontoblatt („Passwort ändern") eine E-Mail-Adresse hinterlegt hat,
+setzt sein Passwort auf der Anmeldeseite über „Passwort vergessen?" selbst
+zurück. Firebase verschickt die Mail.
+
+Ohne hinterlegte Adresse gibt es keine Reset-Mail, weil die Anmeldung dann über
+technische Adressen läuft. Stattdessen setzt der Admin das Konto lokal zurück:
 
 ```bash
 powershell -ExecutionPolicy Bypass -File scripts/reset-password.ps1 -Name "Jupp"

@@ -40,6 +40,7 @@ const firebaseConfig={
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 const auth=firebase.auth();
+auth.languageCode="de"; // Reset- und Bestätigungs-Mails auf Deutsch
 </script>
 
 <script type="text/babel">
@@ -61,6 +62,10 @@ const validUsername=n=>/^[A-Za-z0-9 _\-]{2,20}$/.test(n);
 // Datenbank: users/<Name>/uid, uids/<uid> = Name, names/<name klein> = Name (Eindeutigkeit).
 const authEmail=n=>n.trim().toLowerCase().replace(/ /g,".")+"@ratemates.invalid";
 const nameKey=n=>n.trim().toLowerCase();
+// Echte E-Mail hinterlegt? Dann meldet sich das Konto mit dieser Adresse an und kann
+// ein vergessenes Passwort per Mail zurücksetzen. Die Adresse liegt nur in Firebase Auth.
+const hasRealEmail=u=>!!(u&&u.email&&!u.email.endsWith("@ratemates.invalid"));
+const validEmail=m=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m);
 const readOnce=path=>new Promise((res,rej)=>db.ref(path).once("value",s=>res(s.val()),rej));
 const loginError=msg=>Object.assign(new Error(msg),{msg});
 const NO_ACCOUNT_CODES=["auth/user-not-found","auth/invalid-credential","auth/invalid-login-credentials","auth/wrong-password"];
@@ -70,6 +75,9 @@ const authErrorMsg=(e,fallback)=>{
   if(c==="auth/too-many-requests")return "Zu viele Versuche. Bitte kurz warten.";
   if(c==="auth/operation-not-allowed"||c==="auth/configuration-not-found")return "Anmeldung per Passwort ist in Firebase nicht freigeschaltet.";
   if(c==="auth/weak-password")return "Passwort zu kurz (mindestens 6 Zeichen).";
+  if(c==="auth/invalid-email")return "Das ist keine gültige E-Mail-Adresse.";
+  if(c==="auth/email-already-in-use")return "Diese E-Mail-Adresse gehört schon zu einem anderen Konto.";
+  if(c==="auth/requires-recent-login")return "Bitte melde dich einmal ab und wieder an.";
   return fallback;
 };
 // Nach erfolgreicher Firebase-Anmeldung: Verknüpfung uid <-> Benutzername sicherstellen.
@@ -85,7 +93,7 @@ async function completeLogin(n,pw){
     try{await db.ref("users/"+n).update({uid,pwHash:h});}
     catch{throw loginError("Falsches Passwort.");}
   }else if(linked!==uid){
-    throw loginError("Dieser Benutzername gehört zu einem anderen Konto.");
+    throw loginError("Falsches Passwort. Hast du eine E-Mail-Adresse hinterlegt? Dann melde dich damit an.");
   }
   await db.ref("uids/"+uid).set(n).catch(()=>{});
   await db.ref("names/"+nameKey(n)).set(n).catch(()=>{});
@@ -608,12 +616,39 @@ function LoginScreen({onLogin,invitePending}){
   const [pw,setPw]=useState("");
   const [pw2,setPw2]=useState("");
   const [error,setError]=useState("");
+  const [info,setInfo]=useState("");
+  const [forgot,setForgot]=useState(false);
   const [busy,setBusy]=useState(false);
   const inputStyle=err=>({width:"100%",padding:"13px 16px",borderRadius:12,fontSize:15,border:`1.5px solid ${err?"#c03028":"#dfdcd6"}`,outline:"none",color:"#1b1713",marginBottom:12,textAlign:"center"});
+  const linkBtn={background:"none",border:"none",color:"#5d574f",fontSize:13,cursor:"pointer",marginTop:14,textDecoration:"underline",padding:4};
+  // Anmeldung mit hinterlegter E-Mail-Adresse: Benutzername kommt aus uids/<uid>
+  const doMailLogin=async mail=>{
+    try{await auth.signInWithEmailAndPassword(mail,pw);}
+    catch(e){if(NO_ACCOUNT_CODES.includes(e.code)||e.code==="auth/invalid-email")throw loginError("E-Mail-Adresse oder Passwort falsch.");throw e;}
+    const n=await readOnce("uids/"+auth.currentUser.uid);
+    if(!n)throw loginError("Zu dieser E-Mail-Adresse gehört kein RateMates-Konto.");
+    await completeLogin(n,pw);
+    return n;
+  };
+  const sendReset=async()=>{
+    const m=name.trim();
+    if(!validEmail(m)){setError("Bitte die E-Mail-Adresse eingeben, die du in deinem Konto hinterlegt hast.");return;}
+    setBusy(true);setError("");setInfo("");
+    const sent="✅ Falls zu dieser Adresse ein Konto gehört, ist jetzt eine E-Mail mit einem Link unterwegs. Schau auch im Spam-Ordner nach.";
+    try{await auth.sendPasswordResetEmail(m);setInfo(sent);}
+    catch(e){if(e.code==="auth/user-not-found")setInfo(sent);else setError(authErrorMsg(e,"Senden fehlgeschlagen. Bitte erneut versuchen."));}
+    setBusy(false);
+  };
   const doLogin=async()=>{
-    const n=name.trim();
-    if(!n||!pw){setError("Bitte Name und Passwort eingeben.");return;}
-    setBusy(true);setError("");
+    const n0=name.trim();
+    if(!n0||!pw){setError("Bitte Name oder E-Mail und Passwort eingeben.");return;}
+    setBusy(true);setError("");setInfo("");
+    if(n0.includes("@")){
+      try{const n=await doMailLogin(n0);localStorage.setItem("rmg_user",n);onLogin(n);}
+      catch(e){if(auth.currentUser)await auth.signOut().catch(()=>{});setError(e.msg||authErrorMsg(e,"Anmeldung fehlgeschlagen. Bitte erneut versuchen."));}
+      setBusy(false);return;
+    }
+    const n=n0;
     let fresh=false;
     try{
       const email=authEmail(n);
@@ -684,24 +719,43 @@ function LoginScreen({onLogin,invitePending}){
         {invitePending&&<div style={{background:"#efe9fb",border:"1px solid #d9ccf5",borderRadius:12,padding:"10px 14px",marginBottom:16,fontSize:12,color:"#5b3fa0"}}>🎉 Du wurdest in eine Gruppe eingeladen! Melde dich an oder registriere dich — danach kommst du automatisch hinein.</div>}
         <div style={{display:"flex",gap:6,background:"#efedea",borderRadius:12,padding:4,marginBottom:20}}>
           {[["login","Anmelden"],["register","Registrieren"]].map(([id,lbl])=>(
-            <button key={id} onClick={()=>{setTab(id);setError("");}}
+            <button key={id} onClick={()=>{setTab(id);setError("");setInfo("");setForgot(false);}}
               style={{flex:1,padding:"9px 0",borderRadius:9,border:"none",cursor:"pointer",fontSize:13,fontWeight:600,background:tab===id?"#fab600":"transparent",color:tab===id?"#141414":"#5d574f"}}>
               {lbl}
             </button>
           ))}
         </div>
-        <input value={name} onChange={e=>{setName(e.target.value);setError("");}} placeholder="Benutzername" style={inputStyle()}/>
-        <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setError("");}}
-          onKeyDown={e=>e.key==="Enter"&&tab==="login"&&doLogin()} placeholder="Passwort" style={inputStyle()}/>
-        {tab==="register"&&(
-          <input type="password" value={pw2} onChange={e=>{setPw2(e.target.value);setError("");}}
-            onKeyDown={e=>e.key==="Enter"&&doRegister()} placeholder="Passwort wiederholen" style={inputStyle()}/>
+        {tab==="login"&&forgot?(
+          <>
+            <div style={{fontSize:13,color:"#5d574f",marginBottom:14,lineHeight:1.45}}>Gib die E-Mail-Adresse ein, die du in deinem Konto hinterlegt hast. Wir schicken dir einen Link, mit dem du ein neues Passwort setzen kannst.</div>
+            <input type="email" value={name} onChange={e=>{setName(e.target.value);setError("");setInfo("");}}
+              onKeyDown={e=>e.key==="Enter"&&sendReset()} placeholder="E-Mail-Adresse" style={inputStyle()}/>
+            {error&&<div style={{color:"#c03028",fontSize:12,marginBottom:12}}>{error}</div>}
+            {info&&<div style={{color:"#2e7d52",fontSize:12,marginBottom:12}}>{info}</div>}
+            <button onClick={sendReset} disabled={busy}
+              style={{width:"100%",padding:14,borderRadius:12,background:busy?"#999":"#fab600",color:"#141414",fontSize:15,fontWeight:700,border:"none",cursor:busy?"wait":"pointer",fontFamily:"'Space Grotesk',sans-serif"}}>
+              {busy?"Bitte warten…":"Link senden"}
+            </button>
+            <div style={{fontSize:11.5,color:"#8a847c",marginTop:14,lineHeight:1.45}}>Keine E-Mail-Adresse hinterlegt? Dann kann dir der Admin deiner Gruppe ein neues Passwort geben.</div>
+            <button onClick={()=>{setForgot(false);setError("");setInfo("");}} style={linkBtn}>Zurück zur Anmeldung</button>
+          </>
+        ):(
+          <>
+            <input value={name} onChange={e=>{setName(e.target.value);setError("");}} placeholder={tab==="login"?"Benutzername oder E-Mail":"Benutzername"} style={inputStyle()}/>
+            <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setError("");}}
+              onKeyDown={e=>e.key==="Enter"&&tab==="login"&&doLogin()} placeholder="Passwort" style={inputStyle()}/>
+            {tab==="register"&&(
+              <input type="password" value={pw2} onChange={e=>{setPw2(e.target.value);setError("");}}
+                onKeyDown={e=>e.key==="Enter"&&doRegister()} placeholder="Passwort wiederholen" style={inputStyle()}/>
+            )}
+            {error&&<div style={{color:"#c03028",fontSize:12,marginBottom:12}}>{error}</div>}
+            <button onClick={tab==="login"?doLogin:doRegister} disabled={busy}
+              style={{width:"100%",padding:14,borderRadius:12,background:busy?"#999":"#fab600",color:"#141414",fontSize:15,fontWeight:700,border:"none",cursor:busy?"wait":"pointer",fontFamily:"'Space Grotesk',sans-serif"}}>
+              {busy?"Bitte warten…":tab==="login"?"Anmelden":"Konto erstellen"}
+            </button>
+            {tab==="login"&&<button onClick={()=>{setForgot(true);setError("");setInfo("");if(!name.includes("@"))setName("");}} style={linkBtn}>Passwort vergessen?</button>}
+          </>
         )}
-        {error&&<div style={{color:"#c03028",fontSize:12,marginBottom:12}}>{error}</div>}
-        <button onClick={tab==="login"?doLogin:doRegister} disabled={busy}
-          style={{width:"100%",padding:14,borderRadius:12,background:busy?"#999":"#fab600",color:"#141414",fontSize:15,fontWeight:700,border:"none",cursor:busy?"wait":"pointer",fontFamily:"'Space Grotesk',sans-serif"}}>
-          {busy?"Bitte warten…":tab==="login"?"Anmelden":"Konto erstellen"}
-        </button>
       </div>
     </div>
   );
@@ -1854,19 +1908,45 @@ function AccountSheet({user,onClose,t}){
   const [msg,setMsg]=useState("");
   const [delPw,setDelPw]=useState("");
   const [delMsg,setDelMsg]=useState("");
+  const [mailNew,setMailNew]=useState("");
+  const [mailPw,setMailPw]=useState("");
+  const [mailMsg,setMailMsg]=useState("");
+  const [curMail,setCurMail]=useState(auth.currentUser?.email||"");
   const [busy,setBusy]=useState(false);
   const inp={width:"100%",padding:"12px 14px",borderRadius:10,fontSize:15,border:`1.5px solid ${t.inputBorder}`,background:t.inputBg,outline:"none",color:t.inputColor,marginBottom:10};
+  // Aktuelle Adresse vom Server holen: nach Bestätigung einer neuen E-Mail ist sie geändert
+  useEffect(()=>{const cu=auth.currentUser;if(cu)cu.reload().then(()=>setCurMail(auth.currentUser?.email||"")).catch(()=>{});},[]);
+  const hasMail=hasRealEmail({email:curMail});
+  // Erneute Anmeldung vor sensiblen Aktionen — mit der tatsächlich hinterlegten Adresse
+  const reauth=async(pw,wrongMsg)=>{
+    const cu=auth.currentUser;
+    if(!cu)throw loginError("Sitzung abgelaufen. Bitte neu anmelden.");
+    await cu.reload().catch(()=>{});
+    const cred=firebase.auth.EmailAuthProvider.credential(auth.currentUser.email||authEmail(user),pw);
+    try{await cu.reauthenticateWithCredential(cred);}
+    catch(e){if(NO_ACCOUNT_CODES.includes(e.code))throw loginError(wrongMsg);throw e;}
+    return cu;
+  };
+  const saveMail=async()=>{
+    const m=mailNew.trim();
+    if(!validEmail(m)){setMailMsg("Bitte eine gültige E-Mail-Adresse eingeben.");return;}
+    if(!mailPw){setMailMsg("Bitte dein Passwort zur Bestätigung eingeben.");return;}
+    setBusy(true);setMailMsg("");
+    try{
+      const cu=await reauth(mailPw,"Passwort ist falsch.");
+      await cu.verifyBeforeUpdateEmail(m);
+      setMailNew("");setMailPw("");
+      setMailMsg("✅ Wir haben eine Bestätigungs-Mail an "+m+" geschickt. Sobald du auf den Link klickst, ist die Adresse hinterlegt. Ab dann meldest du dich mit ihr an.");
+    }catch(e){setMailMsg(e.msg||authErrorMsg(e,"Speichern fehlgeschlagen. Bitte erneut versuchen."));}
+    setBusy(false);
+  };
   const change=async()=>{
     if(!oldPw||!newPw){setMsg("Bitte alle Felder ausfüllen.");return;}
     if(newPw.length<6){setMsg("Neues Passwort: mindestens 6 Zeichen.");return;}
     if(newPw!==newPw2){setMsg("Neue Passwörter stimmen nicht überein.");return;}
     setBusy(true);setMsg("");
     try{
-      const cu=auth.currentUser;
-      if(!cu)throw loginError("Sitzung abgelaufen. Bitte neu anmelden.");
-      const cred=firebase.auth.EmailAuthProvider.credential(authEmail(user),oldPw);
-      try{await cu.reauthenticateWithCredential(cred);}
-      catch(e){if(NO_ACCOUNT_CODES.includes(e.code))throw loginError("Aktuelles Passwort ist falsch.");throw e;}
+      const cu=await reauth(oldPw,"Aktuelles Passwort ist falsch.");
       await cu.updatePassword(newPw);
       await db.ref("users/"+user+"/pwHash").remove().catch(()=>{});
       await db.ref("users/"+user+"/seeded").remove().catch(()=>{});
@@ -1882,11 +1962,7 @@ function AccountSheet({user,onClose,t}){
     if(!window.confirm("Konto „"+user+"“ wirklich löschen?\n\nDeine Bewertungen werden gelöscht, deine Vorschläge bleiben ohne Namen erhalten. Das lässt sich nicht rückgängig machen."))return;
     setBusy(true);setDelMsg("");
     try{
-      const cu=auth.currentUser;
-      if(!cu)throw loginError("Sitzung abgelaufen. Bitte neu anmelden.");
-      const cred=firebase.auth.EmailAuthProvider.credential(authEmail(user),delPw);
-      try{await cu.reauthenticateWithCredential(cred);}
-      catch(e){if(NO_ACCOUNT_CODES.includes(e.code))throw loginError("Passwort ist falsch.");throw e;}
+      const cu=await reauth(delPw,"Passwort ist falsch.");
       const groups=Object.values((await readOnce("groups"))||{});
       const mine=groups.filter(g=>g.members&&g.members[user]);
       const blocked=mine.filter(g=>{const m=g.members;const admins=Object.keys(m).filter(k=>m[k]==="admin");return m[user]==="admin"&&admins.length===1&&Object.keys(m).length>1;});
@@ -1934,6 +2010,22 @@ function AccountSheet({user,onClose,t}){
         style={{width:"100%",padding:14,borderRadius:12,background:busy?"#999":t.restBtn,color:t.btnColor,fontSize:15,fontWeight:700,border:"none",cursor:busy?"wait":"pointer",fontFamily:"'Space Grotesk',sans-serif"}}>
         {busy?"Wird geändert…":"Passwort ändern"}
       </button>
+      <div style={{borderTop:`1px solid ${t.inputBorder}`,marginTop:26,paddingTop:18}}>
+        <div style={{fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,fontSize:16,color:t.title}}>✉️ E-Mail für Passwort-Reset</div>
+        <div style={{fontSize:12,color:t.sub,marginTop:2,marginBottom:12,lineHeight:1.45}}>
+          {hasMail
+            ?<>Hinterlegt: <b style={{color:t.title}}>{curMail}</b>. Du meldest dich mit dieser Adresse an und kannst ein vergessenes Passwort per Mail zurücksetzen. Hier kannst du sie ändern.</>
+            :<>Freiwillig. Mit einer hinterlegten Adresse kannst du ein vergessenes Passwort selbst per Mail zurücksetzen. Du meldest dich dann mit der E-Mail-Adresse statt mit dem Benutzernamen an.</>}
+        </div>
+        <input type="email" value={mailNew} onChange={e=>{setMailNew(e.target.value);setMailMsg("");}} placeholder={hasMail?"Neue E-Mail-Adresse":"E-Mail-Adresse"} style={inp}/>
+        <input type="password" value={mailPw} onChange={e=>{setMailPw(e.target.value);setMailMsg("");}}
+          onKeyDown={e=>e.key==="Enter"&&saveMail()} placeholder="Passwort zur Bestätigung" style={inp}/>
+        {mailMsg&&<div style={{fontSize:12,color:mailMsg.startsWith("✅")?"#2e7d52":t.danger,marginBottom:10,lineHeight:1.45}}>{mailMsg}</div>}
+        <button onClick={saveMail} disabled={busy}
+          style={{width:"100%",padding:13,borderRadius:12,background:t.secondaryBtn,color:t.secondaryBtnColor,fontSize:14,fontWeight:700,border:"none",cursor:busy?"wait":"pointer",fontFamily:"'Space Grotesk',sans-serif"}}>
+          {busy?"Bitte warten…":hasMail?"Adresse ändern":"Adresse hinterlegen"}
+        </button>
+      </div>
       <div style={{borderTop:`1px solid ${t.inputBorder}`,marginTop:26,paddingTop:18}}>
         <div style={{fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,fontSize:16,color:t.title}}>🗑️ Konto löschen</div>
         <div style={{fontSize:12,color:t.sub,marginTop:2,marginBottom:12}}>Löscht dein Konto, deine Bewertungen und deine Gruppenmitgliedschaften endgültig. Deine Vorschläge bleiben ohne Namen erhalten.</div>

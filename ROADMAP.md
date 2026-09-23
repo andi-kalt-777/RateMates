@@ -64,6 +64,9 @@ Ziel: Die App ist so abgesichert, dass sie öffentlich erreichbar sein darf.
       Blatt „Passwort ändern"
 - [x] Admin-Weg für vergessene Passwörter: `scripts/reset-password.ps1`, Ablauf
       in der README — 23.09.2026
+- [x] „Passwort vergessen" per Mail für Nutzer mit freiwillig hinterlegter
+      E-Mail-Adresse — 23.09.2026. Für die Datenschutzerklärung (Phase 3): die
+      Adresse liegt nur in Firebase Authentication (Google, auch USA).
 - [ ] Auftragsverarbeitungsvertrag mit Google in den Firebase-Projekteinstellungen
       akzeptieren, bevor Fremde die App nutzen
 

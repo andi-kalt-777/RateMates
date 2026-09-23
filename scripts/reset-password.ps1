@@ -33,8 +33,11 @@ if ($user.uid) {
   $email = ($Name.Trim().ToLowerInvariant() -replace " ", ".") + "@ratemates.invalid"
   Write-Host ""
   Write-Host "Das Konto '$Name' ist bereits auf Firebase Auth umgezogen." -ForegroundColor Yellow
-  Write-Host "Loesche zuerst in der Firebase-Konsole unter Authentication > Nutzer den Eintrag:"
-  Write-Host "    $email" -ForegroundColor Cyan
+  Write-Host "Tipp: Hat der Nutzer eine echte E-Mail-Adresse hinterlegt, kann er sein Passwort"
+  Write-Host "in der App selbst ueber 'Passwort vergessen?' zuruecksetzen."
+  Write-Host ""
+  Write-Host "Sonst loesche zuerst in der Firebase-Konsole unter Authentication > Nutzer den Eintrag"
+  Write-Host "mit der Nutzer-UID $($user.uid) (E-Mail: $email oder seine echte Adresse):" -ForegroundColor Cyan
   Write-Host "https://console.firebase.google.com/project/$Project/authentication/users"
   $ok = Read-Host "Ist der Nutzer in der Konsole geloescht? (j/n)"
   if ($ok -ne "j") { Write-Host "Abgebrochen."; exit 1 }

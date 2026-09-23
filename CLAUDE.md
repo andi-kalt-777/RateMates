@@ -28,7 +28,12 @@ Antworte mit Andreas immer auf **Deutsch**.
   `names/<name klein> = Name` (Eindeutigkeit ohne Groß/Klein). Alte Konten haben
   noch `pwHash`; beim ersten Login zieht `completeLogin()` sie um, die Regel prüft
   dabei den Hash. Von fremden Profilen sind nur `uid` und `createdAt` lesbar —
-  nie `users/<Name>` als Ganzes lesen. Vergessene Passwörter setzt der Admin mit
+  nie `users/<Name>` als Ganzes lesen. Nutzer können im Kontoblatt freiwillig eine
+  echte E-Mail hinterlegen (`verifyBeforeUpdateEmail`); sie ersetzt dann die
+  technische Adresse in Firebase Auth, Anmeldung läuft ab da über die E-Mail, und
+  „Passwort vergessen?" schickt eine Reset-Mail. Die Adresse liegt nur in Firebase
+  Auth, nicht in der Datenbank — nie per `authEmail(user)` neu anmelden, sondern
+  mit `auth.currentUser.email`. Ohne E-Mail setzt der Admin Passwörter mit
   `scripts/reset-password.ps1` zurück (README). Konto löschen steckt in
   `AccountSheet`; die Reihenfolge der Löschschritte ist durch die Regeln vorgegeben.
 
