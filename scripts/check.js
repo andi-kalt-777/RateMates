@@ -48,17 +48,6 @@ const { DEFINITIONS } = await import(
 const ids = DEFINITIONS.map((d) => d.id);
 ok(`${ids.length} Kategorien definiert`);
 
-// Übergang bis zur gemeinsamen Ansicht: jede Media-Kategorie braucht ihren Zweig im Routing
-const routed = [...code.matchAll(/mode==="(\w+)"/g)].map((m) => m[1]);
-const notRouted = ids.filter(
-  (id) => !routed.includes(id) && !["restaurant", "whisky"].includes(id)
-);
-if (notRouted.length) {
-  fail("Kategorie ohne Mode-Routing: " + notRouted.join(", "));
-} else {
-  ok("Alle Kategorien im Mode-Routing verdrahtet");
-}
-
 // --- Datenbankregeln: jeder Firebase-Pfad braucht seinen Block ----------------
 // Ohne Eintrag in database.rules.json ist ein Pfad für alle gesperrt — die
 // Kategorie wäre dann sichtbar, aber jede Bewertung schlüge still fehl.

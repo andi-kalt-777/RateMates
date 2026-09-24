@@ -10,7 +10,7 @@
 //   field1     Freitextfeld (Stadt, Destillerie, Plattform …): key im Datensatz, legacyKey =
 //              zusätzlich geschriebener Altname (Film: director, Serie: platform)
 //   types      Mehrfachauswahl (max. 3) aus options, key im Datensatz
-//   overall    Gesamtwertung (key "stars", 0–10)
+//   overall    Gesamtwertung (key "stars", 0–10); position "last" = Regler nach den Kriterien
 //   criteria   weitere Regler; format "euro" = Preis 1–5
 //   score      "stars" oder Liste von Kriterien, deren Mittel der Hauptwert ist
 //   texts      Beschriftungen
@@ -60,7 +60,7 @@ export const DEFINITIONS=[
     paths:{items:"restaurants",suggestions:"suggestions"},
     field1:{key:"city",label:"Stadt",placeholder:"z.B. München",filterLabel:"Alle Städte",required:true,prefix:"📍 ",errorText:"Bitte Stadt eingeben"},
     types:{key:"cuisines",label:"Art der Küche",options:CUISINES,filterLabel:"Alle Küchen",required:true,max:3,errorText:"Bitte Küche auswählen"},
-    overall:{key:"stars",label:"⭐ Sterne",color:"#e8a020",default:7},
+    overall:{key:"stars",label:"⭐ Sterne",color:"#e8a020",default:7,position:"last"},
     criteria:[
       {key:"food",label:"🍽️ Essen",short:"Essen",color:"#2e7d52",min:0,max:10,default:5},
       {key:"service",label:"🤝 Service",short:"Service",color:"#1a5f8c",min:0,max:10,default:5},

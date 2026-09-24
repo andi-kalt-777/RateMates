@@ -38,16 +38,8 @@ export const ALL_CATS=DEFINITIONS.map(d=>({
   ...(kindOf(d)==="media"?{cfg:CONFIG_BY_ID[d.id]}:{}),
 }));
 
-// Formular-Startwerte der Restaurant-, Whisky- und Media-Ansicht
-export const EMPTY_REST={city:"",name:"",cuisines:[],service:5,food:5,price:3,stars:7,kommentar:""};
-export const EMPTY_RATING={service:5,food:5,price:3,stars:7,kommentar:""};
-export const EMPTY_SUGG={city:"",name:"",cuisines:[]};
-export const EMPTY_WHISKY={name:"",distillery:"",types:[],stars:7,rauchigkeit:5,fruchtigkeit:5,kommentar:""};
-export const EMPTY_W_RATING={stars:7,rauchigkeit:5,fruchtigkeit:5,kommentar:""};
-export const EMPTY_W_SUGG={name:"",distillery:"",types:[]};
-export const EMPTY_MEDIA={name:"",field1:"",genres:[],stars:7,handlung:5,spannung:5,kommentar:""};
-export const EMPTY_MEDIA_RATING={stars:7,handlung:5,spannung:5,kommentar:""};
-export const EMPTY_MEDIA_SUGG={name:"",field1:"",genres:[]};
+// Startauswahl im Formular "Neue Gruppe": nur Restaurants
+export const defaultCategories=()=>Object.fromEntries(DEFINITIONS.map(d=>[d.id,d.id==="restaurant"]));
 
 export function avgOfCat(cat,item){
   if(cat.kind==="rest")return getAvgRest(item);

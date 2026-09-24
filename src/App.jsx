@@ -1,13 +1,11 @@
 import {useState,useEffect} from "react";
 import {db,auth} from "./firebase.js";
-import {configFor,customConfig,modesForGroup} from "./categories/index.js";
+import {DEFINITION_BY_ID,customDefinition,modesForGroup} from "./categories/index.js";
 import {LIGHT,DARK} from "./theme.js";
 import {LoginScreen} from "./screens/LoginScreen.jsx";
 import {GroupsOverview} from "./screens/GroupsOverview.jsx";
 import {GroupSettingsSheet} from "./components/GroupSettingsSheet.jsx";
-import {RestaurantApp} from "./apps/RestaurantApp.jsx";
-import {WhiskyApp} from "./apps/WhiskyApp.jsx";
-import {MediaApp} from "./apps/MediaApp.jsx";
+import {CategoryApp} from "./apps/CategoryApp.jsx";
 import {HomePage} from "./screens/HomePage.jsx";
 import {AllItemsPage} from "./screens/AllItemsPage.jsx";
 
@@ -110,31 +108,13 @@ export function App(){
   const onSettings=()=>setShowSettings(true);
   const shared={user,dark,setDark,mode,setMode,modes,t,group:activeGroup,members,onBack,isAdmin,onSettings,onLogout:doLogout};
 
+  // Bereich der Gruppe: Standard-Kategorie oder gruppeneigene (c:<id>)
+  const customCat=mode&&mode.startsWith("c:")?Object.values(activeGroup.custom||{}).find(c=>c.id===mode.slice(2)):null;
+  const def=customCat?customDefinition(customCat):DEFINITION_BY_ID[mode];
   let content;
-  if(mode==="restaurant")content=<RestaurantApp {...shared}/>;
-  else if(mode==="whisky")content=<WhiskyApp {...shared}/>;
-  else if(mode==="film")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="serie")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="coffee")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="beer")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="wine")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="tea")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="matcha")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="gin")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="rum")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="vodka")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="book")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="audiobook")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="cafe")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="bar")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="icecream")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode==="delivery")content=<MediaApp {...shared} config={configFor(mode)}/>;
-  else if(mode&&mode.startsWith("c:")){
-    const cat=Object.values(activeGroup.custom||{}).find(c=>c.id===mode.slice(2));
-    content=cat?<MediaApp {...shared} config={customConfig(cat)}/>:<div style={{padding:40,textAlign:"center",color:t.sub}}>Kategorie nicht gefunden.</div>;
-  }else{
-    content=<div style={{minHeight:"100vh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",color:t.sub}}>Lade Bereich…</div>;
-  }
+  if(def)content=<CategoryApp key={def.id} {...shared} def={def}/>;
+  else if(mode&&mode.startsWith("c:"))content=<div style={{padding:40,textAlign:"center",color:t.sub}}>Kategorie nicht gefunden.</div>;
+  else content=<div style={{minHeight:"100vh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",color:t.sub}}>Lade Bereich…</div>;
 
   return(
     <>

@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {db} from "../firebase.js";
-import {CATEGORY_DEFS,CATEGORY_GROUPS} from "../categories/index.js";
+import {CATEGORY_DEFS,CATEGORY_GROUPS,defaultCategories} from "../categories/index.js";
 import {UserMenu} from "../components/UserMenu.jsx";
 
 // Gruppenübersicht
@@ -8,7 +8,7 @@ export function GroupsOverview({user,groups,onOpen,onLogout,dark,setDark,t,invit
   const [view,setView]=useState("list");
   const [topicF,setTopicF]=useState("");
   const [sortBy,setSortBy]=useState("name");
-  const [form,setForm]=useState({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,beer:false,wine:false,tea:false,matcha:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false,delivery:false}});
+  const [form,setForm]=useState({name:"",topic:"",categories:defaultCategories()});
   const [error,setError]=useState("");
   const [saving,setSaving]=useState(false);
   const my=groups.filter(g=>g.members&&g.members[user]);
@@ -25,7 +25,7 @@ export function GroupsOverview({user,groups,onOpen,onLogout,dark,setDark,t,invit
       const id=Date.now().toString();
       const categories=Object.fromEntries(Object.entries(form.categories).filter(([,v])=>v));
       await db.ref("groups/"+id).set({id,name:form.name.trim(),topic:form.topic.trim(),categories,members:{[user]:"admin"},createdBy:user,createdAt:Date.now()});
-      setForm({name:"",topic:"",categories:{restaurant:true,whisky:false,film:false,serie:false,coffee:false,beer:false,wine:false,tea:false,matcha:false,gin:false,rum:false,vodka:false,book:false,audiobook:false,cafe:false,bar:false,icecream:false,delivery:false}});
+      setForm({name:"",topic:"",categories:defaultCategories()});
       setView("list");
     }catch{setError("Fehler beim Erstellen.");}
     setSaving(false);
