@@ -102,6 +102,10 @@ Ziel: Die App fühlt sich auf dem Handy wie eine App an.
       Plugins; die uid-Zuordnung in `uids/` ist dafür schon vorbereitet.
       Apple-Login braucht das Entwicklerkonto aus Phase 4. Keine SMS-Zwei-Faktor
       (Bezahltarif, Telefonnummern als zusätzliche Daten, kein Mehrwert).
+      Schon erledigt (24.09.2026): Google Auth Platform in Google Cloud
+      eingerichtet (Branding, Zielgruppe Extern). Deren App-Name „RateMates"
+      ist auch der Name in den Firebase-Mails (`%APP_NAME%`); ohne Branding
+      stand dort die Projekt-ID. OAuth-Client fehlt noch.
 
 ## Phase 3 – Store-Reife
 
