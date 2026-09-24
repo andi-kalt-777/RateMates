@@ -117,10 +117,10 @@ die Werte findest du in deinem alten Stand über `git show HEAD:index.html`).
 ## 6. Lokal ausprobieren, bevor es live geht
 
 ```bash
-npm run serve
+npm run dev
 ```
 
-Dann im Browser http://localhost:8000 öffnen. So siehst du Änderungen sofort,
+Dann im Browser http://localhost:5173/RateMates/ öffnen. So siehst du Änderungen sofort,
 ohne sie zu veröffentlichen. Beenden mit `Strg + C`.
 
 ---
@@ -130,8 +130,8 @@ ohne sie zu veröffentlichen. Beenden mit `Strg + C`.
 | Aufgabe | Befehl |
 |---|---|
 | Sitzung starten | `claude` |
-| Datei prüfen | `npm run check` |
-| Lokal ansehen | `npm run serve` |
+| Prüfen und bauen | `npm run check` |
+| Lokal ansehen | `npm run dev` |
 | Änderungen live stellen | Claude bitten zu committen und zu pushen |
 | Letzte Änderung rückgängig | `git revert HEAD` |
 

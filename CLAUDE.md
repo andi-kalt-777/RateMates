@@ -5,17 +5,21 @@ Antworte mit Andreas immer auf **Deutsch**.
 
 ## Harte Rahmenbedingungen
 
-- **Single-File-App.** Die gesamte App ist `index.html` — React 18 + Babel werden im
-  Browser geladen, es gibt **keinen Build-Schritt**. Kein npm-Projekt, kein Bundler,
-  kein JSX-Import. Neue Abhängigkeiten nur als `<script>`-Tag.
-- **Skript-Versionen bleiben gepinnt** (react@18.2.0, react-dom@18.2.0,
-  @babel/standalone@7.23.10, Firebase 9.23.0). Eine ungepinnte Babel-URL hat die App
-  schon einmal tagelang lahmgelegt ("Cannot use import statement outside a module",
-  weiße Seite bei allen Nutzern). Niemals eine Versionsnummer entfernen.
-- **Deployment:** Push auf `main` → GitHub Pages baut automatisch.
+- **Vite-Projekt** mit React 18. Einstieg `index.html` → `src/main.jsx` →
+  `src/App.jsx` (noch fast der ganze App-Code, wird in Phase 1 aufgeteilt).
+  Firebase-Zugang in `src/firebase.js`, Logos in `src/assets/`.
+  `npm run dev` startet die lokale Vorschau (http://localhost:5173/RateMates/).
+- **Versionen bleiben exakt gepinnt** in `package.json` (react 18.2.0, react-dom
+  18.2.0, firebase 9.23.0, Werkzeuge ebenso), `package-lock.json` ist versioniert.
+  Eine ungepinnte Babel-URL hat die App schon einmal tagelang lahmgelegt (weiße
+  Seite bei allen Nutzern). Nie `^`/`~` eintragen — `npm run check` prüft das.
+  Neue Pakete mit `npm install --save-exact`.
+- **Deployment:** Push auf `main` → GitHub Actions (`.github/workflows/deploy.yml`)
+  führt `npm run check` aus, baut und veröffentlicht auf GitHub Pages. Schlägt die
+  Prüfung fehl, bleibt die alte Version live.
   Live: https://andi-kalt-777.github.io/RateMates/
-- **Firebase Realtime Database**, Zugangsdaten stehen im Klartext im obersten
-  `<script>`-Block (bei dieser App-Art normal; der Web-API-Schlüssel ist ein
+- **Firebase Realtime Database**, Zugangsdaten stehen im Klartext in
+  `src/firebase.js` (bei dieser App-Art normal; der Web-API-Schlüssel ist ein
   öffentlicher Projekt-Identifikator, die Zugriffskontrolle machen die Regeln).
 - **Datenbankregeln** liegen versioniert in `database.rules.json` und gehen mit
   `firebase deploy --only database` live (Firebase CLI, Projekt in `.firebaserc`).
@@ -39,12 +43,13 @@ Antworte mit Andreas immer auf **Deutsch**.
 
 ## Nach jeder Änderung
 
-Die Datei muss syntaktisch fehlerfrei sein, sonst zeigt die App eine weiße Seite —
-ohne Build-Schritt fällt so ein Fehler sonst erst im Live-Betrieb auf:
-
 ```bash
-npm run check     # kompiliert den Babel-Block, prüft Klammer-Balance
+npm run check     # Strukturprüfung (Kategorien, Regeln, Versionen), ESLint, Build
 ```
+
+ESLint findet vor allem nicht deklarierte Namen — die lässt der Build durch, sie
+fallen sonst erst im Browser als weiße Seite auf. Angemeldete Bereiche lassen
+sich nur testen, wenn Andreas sich in der lokalen Vorschau selbst anmeldet.
 
 ## Kategorien hinzufügen
 
@@ -82,8 +87,9 @@ wird eine vergessen, fehlt sie stillschweigend an einer Stelle der Oberfläche:
   (`canDrag`) — sonst schließt sich das Sheet beim Hochscrollen von selbst.
 - Farben kommen aus den Theme-Objekten `LIGHT`/`GLASS_MODE` (hell) und
   `DARK`/`GOLD_MODE` (dunkel). Keine Farbwerte hart in Komponenten schreiben.
-- Zwei eingebettete Base64-Logos: `LOGO_SRC` (hell) und `LOGO_SRC_DARK` (gold).
-  Der Login nutzt immer die goldene Variante, die Hauptseite wechselt nach Modus.
+- Zwei Logos: `src/assets/logo-hell.png` (`LOGO_SRC`) und `logo-gold.png`
+  (`LOGO_SRC_DARK`). Der Login nutzt immer die goldene Variante, die Hauptseite
+  wechselt nach Modus.
 
 ## Umgangston
 
@@ -96,9 +102,9 @@ wird eine vergessen, fehlt sie stillschweigend an einer Stelle der Oberfläche:
 
 RateMates soll als native App in den App Store und den Play Store. Der Weg dorthin
 steht in `ROADMAP.md` — vor jeder größeren Änderung dort nachsehen, in welcher
-Phase wir sind und welche Leitplanken gelten. Aktuell: **Phase 0** (Sicherheit).
-Solange die App eine Einzeldatei ist, keine neuen Funktionen hineinbauen, nur
-Sicherheitsarbeit; der Umbau auf Vite folgt in Phase 1.
+Phase wir sind und welche Leitplanken gelten. Aktuell: **Phase 1** (Umbau zum
+Projekt). Bis sie abgeschlossen ist, keine neuen Funktionen — erst Code aufteilen,
+Kategorien datengetrieben machen, Tests. Die neue Aufmachung folgt in Phase 2.
 
 ## Offene Themen
 

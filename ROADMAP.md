@@ -75,16 +75,19 @@ Ziel: Die App ist so abgesichert, dass sie öffentlich erreichbar sein darf.
 Ziel: Ein normales Software-Projekt mit Build-Schritt. Für Nutzer ändert sich
 nichts sichtbar.
 
-- [ ] Vite + React einrichten, gepinnte Abhängigkeiten über `package.json`
+- [x] Vite + React einrichten, gepinnte Abhängigkeiten über `package.json`
+      (24.09.2026; Firebase vorerst weiter als compat-SDK 9.23.0, Wechsel aufs
+      modulare SDK spart später gut 300 kB)
 - [ ] Code auf Dateien verteilen: Komponenten, Kategorien, Firebase-Zugriff,
       Theme, Hilfsfunktionen
-- [ ] Logos als eigene PNG-Dateien statt Base64
+- [x] Logos als eigene PNG-Dateien statt Base64 (24.09.2026)
 - [ ] Kategorien datengetrieben: eine Konfigurationsdatei statt acht Stellen
 - [ ] Automatische Tests für Rechenlogik (Durchschnitte, Duplikate,
       Mitgliederfilter)
-- [ ] GitHub Actions: bei Push auf `main` bauen und auf GitHub Pages
-      veröffentlichen
-- [ ] `npm run check` durch Linter und Build ersetzen
+- [x] GitHub Actions: bei Push auf `main` bauen und auf GitHub Pages
+      veröffentlichen (24.09.2026)
+- [x] `npm run check` durch Linter und Build ersetzen (24.09.2026; die
+      Strukturprüfung für Kategorien und Regeln bleibt davor)
 
 ## Phase 2 – App-Fähigkeiten
 

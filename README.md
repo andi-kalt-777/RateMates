@@ -10,19 +10,20 @@ Matcha. Vorschläge sammeln, was beim nächsten Mal drankommt.
 
 ## Aufbau
 
-Die komplette App steckt in `index.html`: React 18 mit Babel im Browser, ohne
-Build-Schritt. Daten liegen in einer Firebase Realtime Database, gehostet wird
-über GitHub Pages.
+React 18 mit Vite, der Code liegt unter `src/`. Daten liegen in einer Firebase
+Realtime Database, gehostet wird über GitHub Pages.
 
 ## Entwicklung
 
 ```bash
-npm install      # einmalig, nur für die Syntaxprüfung
-npm run check    # prüft index.html — vor jedem Push ausführen
-npm run serve    # lokale Vorschau auf http://localhost:8000
+npm install      # einmalig
+npm run dev      # lokale Vorschau auf http://localhost:5173/RateMates/
+npm run check    # Strukturprüfung, ESLint und Build — vor jedem Push ausführen
 ```
 
-Ein Push auf `main` geht automatisch live.
+Ein Push auf `main` startet den Workflow `.github/workflows/deploy.yml`: er prüft,
+baut und veröffentlicht die App auf GitHub Pages (Einstellung
+Settings → Pages → Source: „GitHub Actions“).
 
 Die Datenbankregeln liegen in `database.rules.json` und werden getrennt
 veröffentlicht (einmalig `npm install -g firebase-tools` und `firebase login`):
