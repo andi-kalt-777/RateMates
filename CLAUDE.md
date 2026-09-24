@@ -9,10 +9,19 @@ Antworte mit Andreas immer auf **Deutsch**.
   `src/App.jsx` (Anmeldung, Einladungen, Routing). Aufteilung unter `src/`:
   `firebase.js` (Zugang), `categories/` (Definitionen, Registry, Logik),
   `theme.js` (Farben), `lib/auth.js` (Anmelde-Helfer), `lib/ratings.js`
-  (Duplikate, Mitgliederfilter, Altformat, `stamped`), `apps/CategoryApp.jsx`
-  (Ansicht einer Kategorie in einer Gruppe), `screens/` (ganze Seiten),
-  `components/` (Sheets, Menüs, `ui.jsx` mit Slider/Stars/SwipeableSheet …),
-  Logos in `assets/`. Jede Datei exportiert ihre Funktionen benannt.
+  (Duplikate, Mitgliederfilter, Altformat, `stamped`), `lib/activity.js`
+  (Dashboard-Zahlen, Zeitpunkt einer Wertung), `lib/useCategoryData.js` (lädt
+  Einträge aller aktiven Kategorien), `apps/CategoryApp.jsx` (eine Kategorie in
+  einer Gruppe), `screens/` (Dashboard, AllItemsPage für Bewertungen/Vorschläge,
+  GroupsOverview, CategoriesPage, LoginScreen), `components/` (TabBar,
+  PageHeader/Page/Chips, GlobalSheets, Menüs, `ui.jsx` mit Slider/Stars/
+  SwipeableSheet …), Logos und Bildzeichen in `assets/`. Jede Datei exportiert
+  ihre Funktionen benannt.
+- **Aufbau der Oberfläche:** Leiste unten (`TabBar`) mit Start, Bewertungen,
+  Vorschläge, Gruppen, Kategorien; der aktive Reiter liegt in `App.jsx` (`tab`).
+  Seiten nutzen `Page` (Platz für die Leiste) und `PageHeader`. Farben der neuen
+  Aufmachung stehen als eigene Tokens in `LIGHT`/`DARK` (`accent`, `link`, `tile`,
+  `hero…`, `tab…`, `seg…`).
   `npm run dev` startet die lokale Vorschau (http://localhost:5173/RateMates/).
 - **Versionen bleiben exakt gepinnt** in `package.json` (react 18.2.0, react-dom
   18.2.0, firebase 9.23.0, Werkzeuge ebenso), `package-lock.json` ist versioniert.
@@ -118,8 +127,8 @@ Speichern. `src/categories/__fixtures__/` hält den Stand vor dem Umbau fest
 RateMates soll als native App in den App Store und den Play Store. Der Weg dorthin
 steht in `ROADMAP.md` — vor jeder größeren Änderung dort nachsehen, in welcher
 Phase wir sind und welche Leitplanken gelten. Phase 1 (Umbau zum Projekt) ist seit
-24.09.2026 abgeschlossen. Nächster Schritt: **Phase 2**, beginnend mit der neuen
-Aufmachung (Entwurf und Entscheidung in `ROADMAP.md`). Aus Phase 0 ist nur noch der
+24.09.2026 abgeschlossen. Aktuell: **Phase 2** (App-Fähigkeiten); die neue
+Aufmachung ist seit 24.09.2026 live, als Nächstes stehen PWA und Capacitor an. Aus Phase 0 ist nur noch der
 Auftragsverarbeitungsvertrag offen (Klick in der Firebase-Konsole, macht Andreas).
 
 ## Offene Themen

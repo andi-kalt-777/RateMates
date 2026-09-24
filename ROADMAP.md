@@ -95,7 +95,7 @@ nichts sichtbar.
 
 Ziel: Die App fühlt sich auf dem Handy wie eine App an.
 
-- [ ] Neue Aufmachung nach dem Entwurf vom 24.09.2026
+- [x] Neue Aufmachung nach dem Entwurf vom 24.09.2026 (live seit 24.09.2026)
       (https://claude.ai/artifact/KmrMwWcBupGWJMpXF7ZNEo), entschieden:
       Variante A. Leiste unten mit fünf Reitern (Start, Bewertungen,
       Vorschläge, Gruppen, Kategorien), Start ist ein Dashboard (Bilanz,
