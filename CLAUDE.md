@@ -71,6 +71,10 @@ wird eine vergessen, fehlt sie stillschweigend an einer Stelle der Oberfläche:
 - Duplikate über `dupKey(name, f1)` prüfen (Name + Stadt/Medium). Beim Bewerten eines
   vorhandenen Eintrags wird die Wertung unter `ratings/<user>` ergänzt statt ein
   Duplikat anzulegen; ein bestehender Vorschlag wandert dabei in die Bewertungen.
+- Eigene Wertungen immer über `stamped(...)` speichern, das setzt `ratedAt` (Serverzeit).
+  Das künftige Dashboard braucht es; Wertungen vor dem 24.09.2026 haben keins.
+  Nie `ratings/<fremder Name>` schreiben — die Regeln lehnen das ab, und bei
+  `update()` mit mehreren Pfaden scheitert dann der ganze Speichervorgang.
 - Löschen immer mit `window.confirm`-Abfrage.
 - Alle Bottom-Sheets über `SwipeableSheet`. Zwei iOS-Fallstricke, die schon Fehler
   verursacht haben: `maxHeight` in **dvh** (bei `vh` schneidet Safari oben ab), und

@@ -104,6 +104,8 @@ async function completeLogin(n,pw){
 }
 
 // Daten-Helpers
+// Jede eigene Wertung bekommt beim Speichern die Serverzeit (für "letzte Bewertung" im künftigen Dashboard)
+const stamped=r=>({...r,ratedAt:firebase.database.ServerValue.TIMESTAMP});
 function normalizeRest(r){
   if(r.ratings){
     if(r.author&&r.food!==undefined&&!r.ratings[r.author]){
@@ -1227,7 +1229,7 @@ function RestaurantApp({user,dark,setDark,mode,setMode,modes,t,group,members,onB
       if(!window.confirm("„"+_dup.name+"“ gibt es hier bereits. Deine Wertung wird dem bestehenden Eintrag hinzugefügt. Fortfahren?"))return;
       setSaving(true);
       try{
-        await db.ref("restaurants/"+_dup.id+"/ratings/"+user).set({food:form.food,service:form.service,price:form.price,stars:form.stars,kommentar:form.kommentar});
+        await db.ref("restaurants/"+_dup.id+"/ratings/"+user).set(stamped({food:form.food,service:form.service,price:form.price,stars:form.stars,kommentar:form.kommentar}));
         if(suggToConvert){await db.ref("suggestions/"+suggToConvert.id).remove();setSuggToConvert(null);}
         setForm({...EMPTY_REST});setErrors({});setView("list");setSection("list");showToast("✅ Wertung hinzugefügt!");
       }catch{showToast("⚠️ Fehler");}
@@ -1238,19 +1240,15 @@ function RestaurantApp({user,dark,setDark,mode,setMode,modes,t,group,members,onB
       if(!window.confirm("„"+_dupS.name+"“ steht bereits in den Vorschlägen und wird jetzt in die Bewertungen übernommen. Fortfahren?"))return;
       try{await db.ref("suggestions/"+_dupS.id).remove();}catch{}
     }
-    setSaving(true);try{const id=Date.now().toString();await db.ref("restaurants/"+id).set({id,name:form.name,city:form.city.trim(),cuisines:form.cuisines,author:user,ratings:{[user]:{food:form.food,service:form.service,price:form.price,stars:form.stars,kommentar:form.kommentar}}});if(suggToConvert){await db.ref("suggestions/"+suggToConvert.id).remove();setSuggToConvert(null);}setForm({...EMPTY_REST});setErrors({});setView("list");setSection("list");showToast("✅ Gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
+    setSaving(true);try{const id=Date.now().toString();await db.ref("restaurants/"+id).set({id,name:form.name,city:form.city.trim(),cuisines:form.cuisines,author:user,ratings:{[user]:stamped({food:form.food,service:form.service,price:form.price,stars:form.stars,kommentar:form.kommentar})}});if(suggToConvert){await db.ref("suggestions/"+suggToConvert.id).remove();setSuggToConvert(null);}setForm({...EMPTY_REST});setErrors({});setView("list");setSection("list");showToast("✅ Gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleEdit=r=>{const my=r.ratings?.[user]||EMPTY_RATING;setForm({name:r.name,city:r.city,cuisines:Array.isArray(r.cuisines)?r.cuisines:(r.cuisine?[r.cuisine]:[]),food:my.food,service:my.service,price:my.price,stars:my.stars,kommentar:my.kommentar||""});setEditingId(r.id);setSelected(null);setSuggToConvert(null);setErrors({});setView("add");setSection("list");};
-  const handleUpdate=async()=>{const e=valRest();if(Object.keys(e).length){setErrors(e);return;}setSaving(true);try{await db.ref("restaurants/"+editingId).update({name:form.name,city:form.city.trim(),cuisines:form.cuisines});await db.ref("restaurants/"+editingId+"/ratings/"+user).set({food:form.food,service:form.service,price:form.price,stars:form.stars,kommentar:form.kommentar});setForm({...EMPTY_REST});setEditingId(null);setErrors({});setView("list");setSection("list");showToast("✅ Aktualisiert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
+  const handleUpdate=async()=>{const e=valRest();if(Object.keys(e).length){setErrors(e);return;}setSaving(true);try{await db.ref("restaurants/"+editingId).update({name:form.name,city:form.city.trim(),cuisines:form.cuisines});await db.ref("restaurants/"+editingId+"/ratings/"+user).set(stamped({food:form.food,service:form.service,price:form.price,stars:form.stars,kommentar:form.kommentar}));setForm({...EMPTY_REST});setEditingId(null);setErrors({});setView("list");setSection("list");showToast("✅ Aktualisiert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleDelete=async id=>{if(!window.confirm("Diesen Eintrag wirklich löschen? Alle Bewertungen dazu gehen verloren."))return;try{await db.ref("restaurants/"+id).remove();setSelected(null);showToast("🗑️ Gelöscht");}catch{showToast("⚠️ Fehler");}};
   const startRate=r=>{setRatingForm(r.ratings?.[user]||{...EMPTY_RATING});setRatingTarget(r);setSelected(null);setView("rate");};
   const handleSaveRating=async()=>{setSaving(true);try{
-    const original=restaurants.find(x=>x.id===ratingTarget.id)||ratingTarget;
-    const updates={};
-    updates["restaurants/"+ratingTarget.id+"/ratings/"+user]=ratingForm;
-    if(original.author&&original.food!==undefined&&!original.ratings?.[original.author]){
-      updates["restaurants/"+ratingTarget.id+"/ratings/"+original.author]={food:original.food??5,service:original.service??5,price:original.price??3,stars:original.stars??7};
-    }
-    await db.ref().update(updates);
+    // Nur die eigene Wertung schreiben: fremde ratings/<Name> verbieten die Regeln. Die Wertung des
+    // Autors bei Einträgen im alten Format ergänzt normalizeRest() beim Lesen.
+    await db.ref("restaurants/"+ratingTarget.id+"/ratings/"+user).set(stamped(ratingForm));
     setView("list");setSection("list");setRatingTarget(null);showToast("✅ Wertung gespeichert!");
   }catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleAddSugg=async()=>{const e=valSugg();if(Object.keys(e).length){setSuggErrors(e);return;}
@@ -1519,7 +1517,7 @@ function WhiskyApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,
       if(!window.confirm("„"+_dup.name+"“ gibt es hier bereits. Deine Wertung wird dem bestehenden Eintrag hinzugefügt. Fortfahren?"))return;
       setSaving(true);
       try{
-        await db.ref("whiskies/"+_dup.id+"/ratings/"+user).set({stars:form.stars,rauchigkeit:form.rauchigkeit,fruchtigkeit:form.fruchtigkeit,kommentar:form.kommentar});
+        await db.ref("whiskies/"+_dup.id+"/ratings/"+user).set(stamped({stars:form.stars,rauchigkeit:form.rauchigkeit,fruchtigkeit:form.fruchtigkeit,kommentar:form.kommentar}));
         if(suggToConvert){await db.ref("whisky_suggestions/"+suggToConvert.id).remove();setSuggToConvert(null);}
         setForm({...EMPTY_WHISKY});setErrors({});setView("list");setSection("list");showToast("✅ Wertung hinzugefügt!");
       }catch{showToast("⚠️ Fehler");}
@@ -1530,12 +1528,12 @@ function WhiskyApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,
       if(!window.confirm("„"+_dupS.name+"“ steht bereits in den Vorschlägen und wird jetzt in die Bewertungen übernommen. Fortfahren?"))return;
       try{await db.ref("whisky_suggestions/"+_dupS.id).remove();}catch{}
     }
-    setSaving(true);try{const id=Date.now().toString();await db.ref("whiskies/"+id).set({id,name:form.name,distillery:form.distillery.trim(),types:form.types,author:user,ratings:{[user]:{stars:form.stars,rauchigkeit:form.rauchigkeit,fruchtigkeit:form.fruchtigkeit,kommentar:form.kommentar}}});if(suggToConvert){await db.ref("whisky_suggestions/"+suggToConvert.id).remove();setSuggToConvert(null);}setForm({...EMPTY_WHISKY});setErrors({});setView("list");setSection("list");showToast("✅ Whisky gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
+    setSaving(true);try{const id=Date.now().toString();await db.ref("whiskies/"+id).set({id,name:form.name,distillery:form.distillery.trim(),types:form.types,author:user,ratings:{[user]:stamped({stars:form.stars,rauchigkeit:form.rauchigkeit,fruchtigkeit:form.fruchtigkeit,kommentar:form.kommentar})}});if(suggToConvert){await db.ref("whisky_suggestions/"+suggToConvert.id).remove();setSuggToConvert(null);}setForm({...EMPTY_WHISKY});setErrors({});setView("list");setSection("list");showToast("✅ Whisky gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleEdit=w=>{const my=w.ratings?.[user]||EMPTY_W_RATING;setForm({name:w.name,distillery:w.distillery,types:Array.isArray(w.types)?w.types:[],stars:my.stars,rauchigkeit:my.rauchigkeit,fruchtigkeit:my.fruchtigkeit,kommentar:my.kommentar||""});setEditingId(w.id);setSelected(null);setSuggToConvert(null);setErrors({});setView("add");setSection("list");};
-  const handleUpdate=async()=>{const e=valW();if(Object.keys(e).length){setErrors(e);return;}setSaving(true);try{await db.ref("whiskies/"+editingId).update({name:form.name,distillery:form.distillery.trim(),types:form.types});await db.ref("whiskies/"+editingId+"/ratings/"+user).set({stars:form.stars,rauchigkeit:form.rauchigkeit,fruchtigkeit:form.fruchtigkeit,kommentar:form.kommentar});setForm({...EMPTY_WHISKY});setEditingId(null);setErrors({});setView("list");setSection("list");showToast("✅ Aktualisiert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
+  const handleUpdate=async()=>{const e=valW();if(Object.keys(e).length){setErrors(e);return;}setSaving(true);try{await db.ref("whiskies/"+editingId).update({name:form.name,distillery:form.distillery.trim(),types:form.types});await db.ref("whiskies/"+editingId+"/ratings/"+user).set(stamped({stars:form.stars,rauchigkeit:form.rauchigkeit,fruchtigkeit:form.fruchtigkeit,kommentar:form.kommentar}));setForm({...EMPTY_WHISKY});setEditingId(null);setErrors({});setView("list");setSection("list");showToast("✅ Aktualisiert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleDelete=async id=>{if(!window.confirm("Diesen Eintrag wirklich löschen? Alle Bewertungen dazu gehen verloren."))return;try{await db.ref("whiskies/"+id).remove();setSelected(null);showToast("🗑️ Gelöscht");}catch{showToast("⚠️ Fehler");}};
   const startRate=w=>{setRatingForm(w.ratings?.[user]||{...EMPTY_W_RATING});setRatingTarget(w);setSelected(null);setView("rate");};
-  const handleSaveRating=async()=>{setSaving(true);try{await db.ref("whiskies/"+ratingTarget.id+"/ratings/"+user).set(ratingForm);setView("list");setSection("list");setRatingTarget(null);showToast("✅ Wertung gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
+  const handleSaveRating=async()=>{setSaving(true);try{await db.ref("whiskies/"+ratingTarget.id+"/ratings/"+user).set(stamped(ratingForm));setView("list");setSection("list");setRatingTarget(null);showToast("✅ Wertung gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleAddSugg=async()=>{const e=valS();if(Object.keys(e).length){setSuggErrors(e);return;}
     const _key=dupKey(suggForm.name,suggForm.distillery);
     const _dupS=suggestions.find(s=>dupKey(s.name,s.distillery)===_key);
@@ -1796,7 +1794,7 @@ function MediaApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,i
       if(!window.confirm("„"+_dup.name+"“ gibt es hier bereits. Deine Wertung wird dem bestehenden Eintrag hinzugefügt. Fortfahren?"))return;
       setSaving(true);
       try{
-        await db.ref(config.fbBase+"/"+_dup.id+"/ratings/"+user).set({stars:form.stars,handlung:form.handlung,spannung:form.spannung,kommentar:form.kommentar});
+        await db.ref(config.fbBase+"/"+_dup.id+"/ratings/"+user).set(stamped({stars:form.stars,handlung:form.handlung,spannung:form.spannung,kommentar:form.kommentar}));
         if(suggToConvert){await db.ref(config.fbSugg+"/"+suggToConvert.id).remove();setSuggToConvert(null);}
         setForm({...EMPTY_MEDIA});setErrors({});setView("list");setSection("list");showToast("✅ Wertung hinzugefügt!");
       }catch{showToast("⚠️ Fehler");}
@@ -1807,12 +1805,12 @@ function MediaApp({user,dark,setDark,mode,setMode,modes,t,group,members,onBack,i
       if(!window.confirm("„"+_dupS.name+"“ steht bereits in den Vorschlägen und wird jetzt in die Bewertungen übernommen. Fortfahren?"))return;
       try{await db.ref(config.fbSugg+"/"+_dupS.id).remove();}catch{}
     }
-    setSaving(true);try{const id=Date.now().toString();await db.ref(config.fbBase+"/"+id).set({id,name:form.name,[fk]:form.field1.trim(),field1:form.field1.trim(),genres:form.genres,author:user,ratings:{[user]:{stars:form.stars,handlung:form.handlung,spannung:form.spannung,kommentar:form.kommentar}}});if(suggToConvert){await db.ref(config.fbSugg+"/"+suggToConvert.id).remove();setSuggToConvert(null);}setForm({...EMPTY_MEDIA});setErrors({});setView("list");setSection("list");showToast(config.saveToast);}catch{showToast("⚠️ Fehler");}setSaving(false);};
+    setSaving(true);try{const id=Date.now().toString();await db.ref(config.fbBase+"/"+id).set({id,name:form.name,[fk]:form.field1.trim(),field1:form.field1.trim(),genres:form.genres,author:user,ratings:{[user]:stamped({stars:form.stars,handlung:form.handlung,spannung:form.spannung,kommentar:form.kommentar})}});if(suggToConvert){await db.ref(config.fbSugg+"/"+suggToConvert.id).remove();setSuggToConvert(null);}setForm({...EMPTY_MEDIA});setErrors({});setView("list");setSection("list");showToast(config.saveToast);}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleEdit=x=>{const my=x.ratings?.[user]||EMPTY_MEDIA_RATING;setForm({name:x.name,field1:getField1(x),genres:Array.isArray(x.genres)?x.genres:[],stars:my.stars,handlung:my.handlung,spannung:my.spannung,kommentar:my.kommentar||""});setEditingId(x.id);setSelected(null);setSuggToConvert(null);setErrors({});setView("add");setSection("list");};
-  const handleUpdate=async()=>{const e=valM();if(Object.keys(e).length){setErrors(e);return;}setSaving(true);try{await db.ref(config.fbBase+"/"+editingId).update({name:form.name,[fk]:form.field1.trim(),field1:form.field1.trim(),genres:form.genres});await db.ref(config.fbBase+"/"+editingId+"/ratings/"+user).set({stars:form.stars,handlung:form.handlung,spannung:form.spannung,kommentar:form.kommentar});setForm({...EMPTY_MEDIA});setEditingId(null);setErrors({});setView("list");setSection("list");showToast("✅ Aktualisiert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
+  const handleUpdate=async()=>{const e=valM();if(Object.keys(e).length){setErrors(e);return;}setSaving(true);try{await db.ref(config.fbBase+"/"+editingId).update({name:form.name,[fk]:form.field1.trim(),field1:form.field1.trim(),genres:form.genres});await db.ref(config.fbBase+"/"+editingId+"/ratings/"+user).set(stamped({stars:form.stars,handlung:form.handlung,spannung:form.spannung,kommentar:form.kommentar}));setForm({...EMPTY_MEDIA});setEditingId(null);setErrors({});setView("list");setSection("list");showToast("✅ Aktualisiert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleDelete=async id=>{if(!window.confirm("Diesen Eintrag wirklich löschen? Alle Bewertungen dazu gehen verloren."))return;try{await db.ref(config.fbBase+"/"+id).remove();setSelected(null);showToast("🗑️ Gelöscht");}catch{showToast("⚠️ Fehler");}};
   const startRate=x=>{setRatingForm(x.ratings?.[user]||{...EMPTY_MEDIA_RATING});setRatingTarget(x);setSelected(null);setView("rate");};
-  const handleSaveRating=async()=>{setSaving(true);try{await db.ref(config.fbBase+"/"+ratingTarget.id+"/ratings/"+user).set(ratingForm);setView("list");setSection("list");setRatingTarget(null);showToast("✅ Wertung gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
+  const handleSaveRating=async()=>{setSaving(true);try{await db.ref(config.fbBase+"/"+ratingTarget.id+"/ratings/"+user).set(stamped(ratingForm));setView("list");setSection("list");setRatingTarget(null);showToast("✅ Wertung gespeichert!");}catch{showToast("⚠️ Fehler");}setSaving(false);};
   const handleAddSugg=async()=>{const e=valS();if(Object.keys(e).length){setSuggErrors(e);return;}
     const _f1=i=>i.field1!==undefined&&i.field1!==null?i.field1:(i[fk]||"");
     const _key=dupKey(suggForm.name,suggForm.field1);
@@ -2201,7 +2199,7 @@ function GlobalAddSheet({cat,user,isRatings,t,onClose,onSaved}){
       if(isRatings){
         if(dupB){
           if(!window.confirm("„"+dupB.name+"“ gibt es bereits. Deine Wertung wird dem bestehenden Eintrag hinzugefügt. Fortfahren?")){setBusy(false);return;}
-          await db.ref(cat.base+"/"+dupB.id+"/ratings/"+user).set(myRating);
+          await db.ref(cat.base+"/"+dupB.id+"/ratings/"+user).set(stamped(myRating));
           onSaved();return;
         }
         if(dupS){
@@ -2216,14 +2214,14 @@ function GlobalAddSheet({cat,user,isRatings,t,onClose,onSaved}){
       let data;
       if(cat.kind==="rest"){
         data={id,name:n,city:f1.trim(),cuisines:sel,author:user};
-        if(isRatings)data.ratings={[user]:{food:vals.food,service:vals.service,price:vals.price,stars:vals.stars,kommentar}};
+        if(isRatings)data.ratings={[user]:stamped({food:vals.food,service:vals.service,price:vals.price,stars:vals.stars,kommentar})};
       }else if(cat.kind==="whisky"){
         data={id,name:n,distillery:f1.trim(),types:sel,author:user};
-        if(isRatings)data.ratings={[user]:{stars:vals.stars,rauchigkeit:vals.rauchigkeit,fruchtigkeit:vals.fruchtigkeit,kommentar}};
+        if(isRatings)data.ratings={[user]:stamped({stars:vals.stars,rauchigkeit:vals.rauchigkeit,fruchtigkeit:vals.fruchtigkeit,kommentar})};
       }else{
         const fk=(cat.cfg&&cat.cfg.field1Key)||"field1";
         data={id,name:n,[fk]:f1.trim(),field1:f1.trim(),genres:sel,author:user};
-        if(isRatings)data.ratings={[user]:{stars:vals.stars,handlung:vals.handlung,spannung:vals.spannung,kommentar}};
+        if(isRatings)data.ratings={[user]:stamped({stars:vals.stars,handlung:vals.handlung,spannung:vals.spannung,kommentar})};
       }
       await db.ref((isRatings?cat.base:cat.sugg)+"/"+id).set(data);
       onSaved();

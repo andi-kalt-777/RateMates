@@ -96,9 +96,9 @@ Ziel: Die App fühlt sich auf dem Handy wie eine App an.
       Vorschläge, Gruppen, Kategorien), Start ist ein Dashboard (Bilanz,
       letzte eigene Bewertung, Neues von Freunden, meistbewertete
       Kategorien). Die Leiste bleibt auch in geöffneten Gruppen stehen,
-      dort oben Umschalter Bewertungen/Vorschläge. Voraussetzung:
-      Wertungen brauchen ein Zeitfeld (z. B. `ratedAt`), bisher hat nur
-      der Eintrag über seine `id` ein Datum.
+      dort oben Umschalter Bewertungen/Vorschläge. Wertungen tragen seit
+      24.09.2026 ein Zeitfeld `ratedAt`; ältere haben keins und zählen nur
+      zur Bilanz.
 - [ ] PWA: Manifest, Service Worker, installierbar, lädt offline
 - [ ] Capacitor-Projekte für iOS und Android anlegen
 - [ ] App-Icons, Startbildschirm, Statusleiste, Safe Areas
