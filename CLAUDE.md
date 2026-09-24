@@ -7,10 +7,10 @@ Antworte mit Andreas immer auf **Deutsch**.
 
 - **Vite-Projekt** mit React 18. Einstieg `index.html` → `src/main.jsx` →
   `src/App.jsx` (Anmeldung, Einladungen, Routing). Aufteilung unter `src/`:
-  `firebase.js` (Zugang), `categories.js` (Kategorien, Konfigurationen, Registry),
+  `firebase.js` (Zugang), `categories/` (Definitionen, Registry, Logik),
   `theme.js` (Farben), `lib/auth.js` (Anmelde-Helfer), `lib/ratings.js`
-  (Durchschnitte, Duplikate, Mitgliederfilter, `stamped`), `apps/` (Restaurant-,
-  Whisky- und generische Media-Ansicht einer Gruppe), `screens/` (ganze Seiten),
+  (Duplikate, Mitgliederfilter, Altformat, `stamped`), `apps/CategoryApp.jsx`
+  (Ansicht einer Kategorie in einer Gruppe), `screens/` (ganze Seiten),
   `components/` (Sheets, Menüs, `ui.jsx` mit Slider/Stars/SwipeableSheet …),
   Logos in `assets/`. Jede Datei exportiert ihre Funktionen benannt.
   `npm run dev` startet die lokale Vorschau (http://localhost:5173/RateMates/).
@@ -64,23 +64,23 @@ sich nur testen, wenn Andreas sich in der lokalen Vorschau selbst anmeldet.
 ## Kategorien hinzufügen
 
 Jede Kategorie ist ein Eintrag in `src/categories/definitions.js` (Aufbau steht
-oben in der Datei); `CATEGORY_DEFS`, `CATEGORY_GROUPS`, `ALL_CATS` und die
-Konfiguration für `MediaApp` leitet `src/categories/index.js` daraus ab. Die
-Schlüssel in der Definition (`city`, `cuisines`, `food`, `handlung` …) sind
-Feldnamen in der Datenbank — nie umbenennen.
-
-Umbau läuft (Phase 1): Bis Restaurant, Whisky und Media eine gemeinsame Ansicht
-haben, braucht eine neue Kategorie noch vier Stellen:
+oben in der Datei). Alles andere wird daraus abgeleitet: Registry
+(`src/categories/index.js`), Rechen- und Speicherlogik (`src/categories/logic.js`),
+die gemeinsame Ansicht `src/apps/CategoryApp.jsx` für alle Kategorien und
+gruppeneigene (`customDefinition`), die globalen Übersichten, das Gruppenformular
+und das Löschen des Kontos. Eine neue Kategorie braucht nur zwei Schritte:
 
 1. Eintrag in `src/categories/definitions.js` (Auswahlliste in `options.js`)
-2. Formular-Defaults im Gruppenformular (**zwei** Stellen in
-   `src/screens/GroupsOverview.jsx`)
-3. Zweig im Mode-Routing in `src/App.jsx`
-4. `database.rules.json` — je ein Block für `paths.items` und
+2. `database.rules.json` — je ein Block für `paths.items` und
    `paths.suggestions`, danach `firebase deploy --only database`
+   (`npm run check` meldet fehlende Blöcke)
 
-`src/categories/__fixtures__/vor-umbau.json` hält den Stand vor dem Umbau fest;
-`definitions.test.js` prüft, dass die Ableitungen ihm entsprechen.
+Die Schlüssel in der Definition (`city`, `cuisines`, `food`, `handlung` …) sind
+Feldnamen in der Datenbank — nie umbenennen, sonst passen bestehende Einträge
+nicht mehr (die Tests schlagen dann an). Formulare arbeiten intern mit
+einheitlichen Namen (`name`, `field1`, `types`), `logic.js` übersetzt beim
+Speichern. `src/categories/__fixtures__/` hält den Stand vor dem Umbau fest
+(`vor-umbau.json`, `alt.js`); die Tests vergleichen die neue Logik damit.
 
 ## Konventionen
 
@@ -117,9 +117,10 @@ haben, braucht eine neue Kategorie noch vier Stellen:
 
 RateMates soll als native App in den App Store und den Play Store. Der Weg dorthin
 steht in `ROADMAP.md` — vor jeder größeren Änderung dort nachsehen, in welcher
-Phase wir sind und welche Leitplanken gelten. Aktuell: **Phase 1** (Umbau zum
-Projekt). Bis sie abgeschlossen ist, keine neuen Funktionen — erst Code aufteilen,
-Kategorien datengetrieben machen, Tests. Die neue Aufmachung folgt in Phase 2.
+Phase wir sind und welche Leitplanken gelten. Phase 1 (Umbau zum Projekt) ist seit
+24.09.2026 abgeschlossen. Nächster Schritt: **Phase 2**, beginnend mit der neuen
+Aufmachung (Entwurf und Entscheidung in `ROADMAP.md`). Aus Phase 0 ist nur noch der
+Auftragsverarbeitungsvertrag offen (Klick in der Firebase-Konsole, macht Andreas).
 
 ## Offene Themen
 

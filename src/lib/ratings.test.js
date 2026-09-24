@@ -7,7 +7,7 @@ vi.mock("../firebase.js", () => ({
   auth: {},
 }));
 
-const { stamped, normalizeRest, dupKey, restrictToMembers, getAvgRest, getAvgWhisky, getAvgMedia } =
+const { stamped, normalizeRest, dupKey, restrictToMembers } =
   await import("./ratings.js");
 
 describe("stamped", () => {
@@ -74,35 +74,5 @@ describe("restrictToMembers", () => {
   });
   it("verträgt Einträge ohne Wertungen", () => {
     expect(restrictToMembers({ name: "Y" }, ["Andi"]).ratings).toEqual({});
-  });
-});
-
-describe("Durchschnitte", () => {
-  it("Restaurant: Mittelwerte auf eine Stelle, Preis ganzzahlig, avg aus Essen und Service", () => {
-    const a = getAvgRest({ ratings: {
-      A: { food: 8, service: 6, price: 2, stars: 7 },
-      B: { food: 9, service: 7, price: 3, stars: 8 },
-      C: { food: 7, service: 9, price: 3, stars: 10 },
-    } });
-    expect(a).toEqual({ food: 8, service: 7.3, price: 3, stars: 8.3, avg: 7.7, count: 3 });
-  });
-
-  it("Restaurant ohne Wertungen: alles 0", () => {
-    expect(getAvgRest({})).toEqual({ food: 0, service: 0, price: 0, stars: 0, avg: 0, count: 0 });
-  });
-
-  it("Whisky", () => {
-    expect(getAvgWhisky({ ratings: { A: { stars: 9, rauchigkeit: 8, fruchtigkeit: 3 }, B: { stars: 6, rauchigkeit: 2, fruchtigkeit: 6 } } }))
-      .toEqual({ stars: 7.5, rauchigkeit: 5, fruchtigkeit: 4.5, count: 2 });
-    expect(getAvgWhisky({ ratings: {} }).count).toBe(0);
-  });
-
-  it("Media (Filme, Bier, …) mit den Kriterien handlung und spannung", () => {
-    expect(getAvgMedia({ ratings: { A: { stars: 7, handlung: 5, spannung: 2 }, B: { stars: 8, handlung: 6, spannung: 4 }, C: { stars: 8, handlung: 6, spannung: 4 } } }))
-      .toEqual({ stars: 7.7, handlung: 5.7, spannung: 3.3, count: 3 });
-  });
-
-  it("ratedAt stört die Durchschnitte nicht", () => {
-    expect(getAvgMedia({ ratings: { A: { stars: 7, handlung: 5, spannung: 2, ratedAt: 1790000000000 } } }).stars).toBe(7);
   });
 });

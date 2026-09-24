@@ -1,7 +1,7 @@
 import {useState,useEffect} from "react";
 import {firebase,db,auth} from "../firebase.js";
 import {authEmail,nameKey,hasRealEmail,validEmail,readOnce,loginError,NO_ACCOUNT_CODES,authErrorMsg} from "../lib/auth.js";
-import {ALL_CATS} from "../categories/index.js";
+import {DEFINITIONS,customDefinition} from "../categories/index.js";
 import {SwipeableSheet} from "./ui.jsx";
 
 // Passwort ändern und Konto löschen (für alle Benutzer)
@@ -71,8 +71,8 @@ export function AccountSheet({user,onClose,t}){
       const mine=groups.filter(g=>g.members&&g.members[user]);
       const blocked=mine.filter(g=>{const m=g.members;const admins=Object.keys(m).filter(k=>m[k]==="admin");return m[user]==="admin"&&admins.length===1&&Object.keys(m).length>1;});
       if(blocked.length)throw loginError("Du bist alleiniger Admin in: "+blocked.map(g=>g.name).join(", ")+". Ernenne dort zuerst einen anderen Admin.");
-      const bases=ALL_CATS.map(c=>[c.base,c.sugg]);
-      groups.forEach(g=>Object.values(g.custom||{}).forEach(c=>bases.push(["custom_"+c.id,"custom_"+c.id+"_sugg"])));
+      const bases=DEFINITIONS.map(d=>[d.paths.items,d.paths.suggestions]);
+      groups.forEach(g=>Object.values(g.custom||{}).forEach(c=>{const p=customDefinition(c).paths;bases.push([p.items,p.suggestions]);}));
       for(const [base,sugg] of bases){
         const items=(await readOnce(base))||{};
         for(const [id,it] of Object.entries(items)){

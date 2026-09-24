@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import fs from "node:fs";
+import { kindOf, oldConfig, avgOfCat, subtitleOfCat, catFilterMeta } from "./__fixtures__/alt.js";
 
 vi.mock("../firebase.js", () => ({
   firebase: { database: { ServerValue: { TIMESTAMP: { ".sv": "timestamp" } } } },
@@ -7,15 +7,12 @@ vi.mock("../firebase.js", () => ({
   auth: {},
 }));
 
-const { DEFINITIONS, DEFINITION_BY_ID, ALL_CATS, avgOfCat, subtitleOfCat, catFilterMeta, customDefinition } = await import("./index.js");
+const { DEFINITIONS, DEFINITION_BY_ID, customDefinition } = await import("./index.js");
 const L = await import("./logic.js");
 const { stamped, dupKey, normalizeRest } = await import("../lib/ratings.js");
 
 const TS = { ".sv": "timestamp" };
-const kind = (id) => ALL_CATS.find((c) => c.id === id).kind;
-// Altnamen für Feld 1 aus dem festgehaltenen Stand vor dem Umbau, nicht aus den neuen Definitionen
-const before = JSON.parse(fs.readFileSync(new URL("./__fixtures__/vor-umbau.json", import.meta.url), "utf8"));
-const oldCfg = (id) => before.configs[before.ALL_CATS.find((c) => c.id === id).cfgName];
+const kind = kindOf;
 
 // ── Nachbau der bisherigen Speicherlogik aus RestaurantApp, WhiskyApp und MediaApp ──
 // (so stand es vor dem Umbau im Code; die neue Logik muss exakt dasselbe schreiben)
@@ -57,7 +54,7 @@ describe("Speichern: jede Kategorie schreibt dieselben Daten wie vorher", () => 
   for (const def of DEFINITIONS) {
     it(def.id, () => {
       const form = sampleForm(def);
-      const old = oldPayloads(def.id, oldForm(def.id, form), "Andi", oldCfg(def.id));
+      const old = oldPayloads(def.id, oldForm(def.id, form), "Andi", oldConfig(def.id));
       expect(L.itemPayload(def, { id: "1", form, user: "Andi", withRating: true })).toEqual(old.item);
       expect(L.itemPayload(def, { id: "1", form, user: "Andi", withRating: false })).toEqual(old.sugg);
       expect(L.updatePayload(def, form)).toEqual(old.update);
@@ -85,10 +82,9 @@ describe("Durchschnitte wie bisher", () => {
   });
   for (const def of DEFINITIONS) {
     it(def.id, () => {
-      const cat = ALL_CATS.find((c) => c.id === def.id);
       const item = { ratings: ratings(def) };
-      expect(L.average(def, item)).toEqual(avgOfCat(cat, item));
-      expect(L.average(def, {})).toEqual(avgOfCat(cat, {}));
+      expect(L.average(def, item)).toEqual(avgOfCat(def.id, item));
+      expect(L.average(def, {})).toEqual(avgOfCat(def.id, {}));
     });
   }
   it("Hauptwert: Restaurant = Schnitt aus Essen und Service, sonst Sterne", () => {
@@ -108,18 +104,16 @@ describe("Lesen: Feld 1, Auswahl, Untertitel, Filter, Duplikate", () => {
   };
   it("Untertitel wie in der globalen Übersicht", () => {
     for (const [id, list] of Object.entries(items)) {
-      const cat = ALL_CATS.find((c) => c.id === id);
       for (const it of list) {
         // Ausnahme bisher: global zeigte bei Serien nur field1/director, nicht platform — gleich, solange field1 gesetzt ist
         expect(L.subtitle(DEFINITION_BY_ID[id], it), id + " " + it.name).toBe(
-          it.cuisine ? "Bonn · Deutsch" : subtitleOfCat(cat, it));
+          it.cuisine ? "Bonn · Deutsch" : subtitleOfCat(id, it));
       }
     }
   });
   it("Filterwerte wie bisher (außer Whisky: Beschriftung jetzt „Alle Typen“ wie in der Gruppe)", () => {
     for (const [id, list] of Object.entries(items)) {
-      const cat = ALL_CATS.find((c) => c.id === id);
-      const oldM = catFilterMeta(cat), newM = L.filterMeta(DEFINITION_BY_ID[id]);
+      const oldM = catFilterMeta(id), newM = L.filterMeta(DEFINITION_BY_ID[id]);
       expect(newM.l1, id).toBe(oldM.l1);
       if (id !== "whisky") expect(newM.l2, id).toBe(oldM.l2);
       for (const it of list.filter((x) => !x.cuisine && (x.field1 !== undefined || id === "restaurant" || id === "whisky"))) {
@@ -163,5 +157,35 @@ describe("Formulare", () => {
     const def = DEFINITION_BY_ID.film;
     expect(L.formFromSuggestion(def, { name: "Dune", director: "Kino", genres: ["Drama"] }))
       .toEqual({ name: "Dune", field1: "Kino", types: ["Drama"], stars: 7, handlung: 5, spannung: 5, kommentar: "" });
+  });
+});
+
+describe("Durchschnitte mit festen Zahlen", () => {
+  it("Restaurant: Mittelwerte auf eine Stelle, Preis ganzzahlig, avg aus Essen und Service", () => {
+    const a = L.average(DEFINITION_BY_ID.restaurant, { ratings: {
+      A: { food: 8, service: 6, price: 2, stars: 7 },
+      B: { food: 9, service: 7, price: 3, stars: 8 },
+      C: { food: 7, service: 9, price: 3, stars: 10 },
+    } });
+    expect(a).toEqual({ food: 8, service: 7.3, price: 3, stars: 8.3, avg: 7.7, count: 3 });
+  });
+
+  it("Restaurant ohne Wertungen: alles 0", () => {
+    expect(L.average(DEFINITION_BY_ID.restaurant, {})).toEqual({ food: 0, service: 0, price: 0, stars: 0, avg: 0, count: 0 });
+  });
+
+  it("Whisky", () => {
+    expect(L.average(DEFINITION_BY_ID.whisky, { ratings: { A: { stars: 9, rauchigkeit: 8, fruchtigkeit: 3 }, B: { stars: 6, rauchigkeit: 2, fruchtigkeit: 6 } } }))
+      .toEqual({ stars: 7.5, rauchigkeit: 5, fruchtigkeit: 4.5, count: 2 });
+    expect(L.average(DEFINITION_BY_ID.whisky, { ratings: {} }).count).toBe(0);
+  });
+
+  it("Media (Filme, Bier, …) mit den Kriterien handlung und spannung", () => {
+    expect(L.average(DEFINITION_BY_ID.film, { ratings: { A: { stars: 7, handlung: 5, spannung: 2 }, B: { stars: 8, handlung: 6, spannung: 4 }, C: { stars: 8, handlung: 6, spannung: 4 } } }))
+      .toEqual({ stars: 7.7, handlung: 5.7, spannung: 3.3, count: 3 });
+  });
+
+  it("ratedAt stört die Durchschnitte nicht", () => {
+    expect(L.average(DEFINITION_BY_ID.film, { ratings: { A: { stars: 7, handlung: 5, spannung: 2, ratedAt: 1790000000000 } } }).stars).toBe(7);
   });
 });

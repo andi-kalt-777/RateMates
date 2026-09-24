@@ -36,11 +36,10 @@ was später im Store im Weg steht.
 
 ## Leitplanken für die laufende Arbeit
 
-- Solange die App eine Einzeldatei ist, nur noch Sicherheitsarbeit (Phase 0)
-  hineinbauen. Neue Funktionen erst nach dem Umbau in Phase 1, sonst wird der
-  Umbau mit jeder Funktion teurer.
-- Kategorien sollen künftig aus einer Konfiguration kommen, nicht aus acht
-  Codestellen. Neue Kategorien bis dahin nur, wenn es wirklich nötig ist.
+- Der Umbau zum Projekt (Phase 1) ist abgeschlossen; neue Funktionen kommen jetzt
+  in die aufgeteilte Struktur unter `src/`, mit Tests für neue Rechenlogik.
+- Kategorien kommen aus `src/categories/definitions.js`. Neue Kategorie =
+  Definition + Block in `database.rules.json`.
 - Alles, was Nutzer sehen, muss auch für Fremde ohne Erklärung verständlich
   sein. Das gilt schon jetzt für neue Oberflächen.
 
@@ -81,7 +80,9 @@ nichts sichtbar.
 - [x] Code auf Dateien verteilen: Komponenten, Kategorien, Firebase-Zugriff,
       Theme, Hilfsfunktionen (24.09.2026, 18 Dateien unter `src/`)
 - [x] Logos als eigene PNG-Dateien statt Base64 (24.09.2026)
-- [ ] Kategorien datengetrieben: eine Konfigurationsdatei statt acht Stellen
+- [x] Kategorien datengetrieben: eine Konfigurationsdatei statt acht Stellen
+      (24.09.2026: `src/categories/definitions.js`, eine gemeinsame Ansicht
+      `CategoryApp` statt drei; neue Kategorie = Definition + Regelblock)
 - [x] Automatische Tests für Rechenlogik (Durchschnitte, Duplikate,
       Mitgliederfilter) — 24.09.2026, Vitest, 39 Tests inkl. Kategorie-Registry
       und Anmelde-Helfer, laufen in `npm run check` und im Deployment mit

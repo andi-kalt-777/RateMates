@@ -1,126 +1,76 @@
 import {useState,useEffect} from "react";
 import {db} from "../firebase.js";
-import {stamped,normalizeRest,dupKey,restrictToMembers} from "../lib/ratings.js";
-import {CUISINES,WHISKY_TYPES,CATEGORY_GROUPS,ALL_CATS,avgOfCat,subtitleOfCat,catFilterMeta} from "../categories/index.js";
-import {Slider,SwipeableSheet} from "../components/ui.jsx";
+import {dupKey,restrictToMembers} from "../lib/ratings.js";
+import {CATEGORY_GROUPS,DEFINITIONS} from "../categories/index.js";
+import {normalizeItem,itemDupKey,average,subtitle,filterMeta,emptyForm,validate,itemPayload,ratingPayload} from "../categories/logic.js";
+import {GLASS_MODE,GOLD_MODE} from "../theme.js";
+import {SwipeableSheet,TypeChips} from "../components/ui.jsx";
+import {RatingFields} from "../apps/CategoryApp.jsx";
 import {UserMenu} from "../components/UserMenu.jsx";
 
-// FORMULAR-METADATEN je Kategorie (für globales Anlegen)
-export function catFormMeta(cat){
-  if(cat.kind==="rest")return{f1Label:"Stadt",f1Ph:"z.B. Köln",options:CUISINES,optLabel:"Küche"};
-  if(cat.kind==="whisky")return{f1Label:"Destillerie",f1Ph:"z.B. Laphroaig",options:WHISKY_TYPES,optLabel:"Sorte"};
-  return{f1Label:(cat.cfg&&cat.cfg.field1Label)||"Details",f1Ph:(cat.cfg&&cat.cfg.field1Placeholder)||"",options:(cat.cfg&&cat.cfg.genreOptions)||[],optLabel:"Sorte / Genre"};
-}
 // GLOBALES ANLEGEN: neuer Eintrag mit eigener Wertung bzw. neuer Vorschlag
-export function GlobalAddSheet({cat,user,isRatings,t,onClose,onSaved}){
-  const meta=catFormMeta(cat);
-  const [name,setName]=useState("");
-  const [f1,setF1]=useState("");
-  const [sel,setSel]=useState([]);
-  const [vals,setVals]=useState(cat.kind==="rest"?{food:5,service:5,price:3,stars:7}:cat.kind==="whisky"?{stars:7,rauchigkeit:5,fruchtigkeit:5}:{stars:7,handlung:5,spannung:5});
-  const [kommentar,setKommentar]=useState("");
+export function GlobalAddSheet({def,user,isRatings,dark,t,onClose,onSaved}){
+  const mc=dark?GOLD_MODE:GLASS_MODE;
+  const [form,setForm]=useState(()=>emptyForm(def));
   const [busy,setBusy]=useState(false);
   const [msg,setMsg]=useState("");
-  const setV=(k,v)=>setVals(p=>({...p,[k]:v}));
-  const toggle=o=>setSel(p=>p.includes(o)?p.filter(x=>x!==o):[...p,o]);
-  const accent=t.restAccent;
+  const set=(k,v)=>{setForm(p=>({...p,[k]:v}));setMsg("");};
   const inp={width:"100%",padding:"13px 16px",borderRadius:12,fontSize:15,border:`1.5px solid ${t.inputBorder}`,outline:"none",background:t.inputBg,color:t.inputColor,marginBottom:12};
   const save=async()=>{
-    const n=name.trim();
-    if(!n){setMsg("Bitte gib einen Namen an.");return;}
-    if(cat.kind==="rest"&&!f1.trim()){setMsg("Bitte gib die Stadt an.");return;}
+    const f={...form,name:form.name.trim()};
+    const errs=Object.values(validate(def,f));
+    if(errs.length){setMsg(errs[0]);return;}
     setBusy(true);setMsg("");
     try{
-      // Duplikatprüfung: gleicher Name + gleiche Stadt/gleiches Medium in dieser Kategorie
-      const fkG=(cat.cfg&&cat.cfg.field1Key)||"field1";
-      const f1Of=i=>cat.kind==="rest"?i.city:cat.kind==="whisky"?i.distillery:(i.field1!==undefined&&i.field1!==null?i.field1:(i[fkG]||""));
-      const [baseSnap,suggSnap]=await Promise.all([db.ref(cat.base).get().catch(()=>null),db.ref(cat.sugg).get().catch(()=>null)]);
+      // Duplikatprüfung: gleicher Name + gleiches Feld 1 (Stadt, Destillerie …) in dieser Kategorie
+      const P=def.paths;
+      const [baseSnap,suggSnap]=await Promise.all([db.ref(P.items).get().catch(()=>null),db.ref(P.suggestions).get().catch(()=>null)]);
       const baseArr=baseSnap&&baseSnap.val()?Object.values(baseSnap.val()):[];
       const suggArr=suggSnap&&suggSnap.val()?Object.values(suggSnap.val()):[];
-      const key=dupKey(n,f1);
-      const dupB=baseArr.find(i=>i&&dupKey(i.name,f1Of(i))===key);
-      const dupS=suggArr.find(i=>i&&dupKey(i.name,f1Of(i))===key);
-      const myRating=cat.kind==="rest"?{food:vals.food,service:vals.service,price:vals.price,stars:vals.stars,kommentar}
-        :cat.kind==="whisky"?{stars:vals.stars,rauchigkeit:vals.rauchigkeit,fruchtigkeit:vals.fruchtigkeit,kommentar}
-        :{stars:vals.stars,handlung:vals.handlung,spannung:vals.spannung,kommentar};
+      const key=dupKey(f.name,f.field1);
+      const dupB=baseArr.find(i=>i&&itemDupKey(def,i)===key);
+      const dupS=suggArr.find(i=>i&&itemDupKey(def,i)===key);
       if(isRatings){
         if(dupB){
           if(!window.confirm("„"+dupB.name+"“ gibt es bereits. Deine Wertung wird dem bestehenden Eintrag hinzugefügt. Fortfahren?")){setBusy(false);return;}
-          await db.ref(cat.base+"/"+dupB.id+"/ratings/"+user).set(stamped(myRating));
+          await db.ref(P.items+"/"+dupB.id+"/ratings/"+user).set(ratingPayload(def,f));
           onSaved();return;
         }
         if(dupS){
           if(!window.confirm("„"+dupS.name+"“ steht bereits in den Vorschlägen und wird jetzt in die Bewertungen übernommen. Fortfahren?")){setBusy(false);return;}
-          await db.ref(cat.sugg+"/"+dupS.id).remove().catch(()=>{});
+          await db.ref(P.suggestions+"/"+dupS.id).remove().catch(()=>{});
         }
       }else{
         if(dupS){setMsg("💡 Diesen Vorschlag gibt es bereits (von "+dupS.author+").");setBusy(false);return;}
         if(dupB){setMsg("⭐ Das ist bereits in den Bewertungen vorhanden.");setBusy(false);return;}
       }
       const id=Date.now().toString();
-      let data;
-      if(cat.kind==="rest"){
-        data={id,name:n,city:f1.trim(),cuisines:sel,author:user};
-        if(isRatings)data.ratings={[user]:stamped({food:vals.food,service:vals.service,price:vals.price,stars:vals.stars,kommentar})};
-      }else if(cat.kind==="whisky"){
-        data={id,name:n,distillery:f1.trim(),types:sel,author:user};
-        if(isRatings)data.ratings={[user]:stamped({stars:vals.stars,rauchigkeit:vals.rauchigkeit,fruchtigkeit:vals.fruchtigkeit,kommentar})};
-      }else{
-        const fk=(cat.cfg&&cat.cfg.field1Key)||"field1";
-        data={id,name:n,[fk]:f1.trim(),field1:f1.trim(),genres:sel,author:user};
-        if(isRatings)data.ratings={[user]:stamped({stars:vals.stars,handlung:vals.handlung,spannung:vals.spannung,kommentar})};
-      }
-      await db.ref((isRatings?cat.base:cat.sugg)+"/"+id).set(data);
+      await db.ref((isRatings?P.items:P.suggestions)+"/"+id).set(itemPayload(def,{id,form:f,user,withRating:isRatings}));
       onSaved();
     }catch{setMsg("⚠️ Konnte nicht speichern. Bitte erneut versuchen.");setBusy(false);}
   };
   return(
     <SwipeableSheet onClose={onClose} t={t} zIndex={350}>
-      <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:18,fontWeight:700,color:t.title,marginBottom:16,textAlign:"center"}}>{cat.icon} {isRatings?((cat.cfg&&cat.cfg.addTitle)||cat.label.replace(/s$/,"")+" hinzufügen"):"Vorschlag: "+cat.label}</div>
-      <input value={name} onChange={e=>{setName(e.target.value);setMsg("");}} placeholder="Name" style={inp}/>
-      <input value={f1} onChange={e=>{setF1(e.target.value);setMsg("");}} placeholder={meta.f1Label+(meta.f1Ph?" — "+meta.f1Ph:"")} style={inp}/>
-      {meta.options.length>0&&(
-        <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:16}}>
-          {meta.options.map(o=>(
-            <button key={o} onClick={()=>toggle(o)}
-              style={{padding:"6px 12px",borderRadius:16,border:`1.5px solid ${sel.includes(o)?t.restChipOn:t.chipBorder}`,background:sel.includes(o)?t.restChipOn:t.chipBg,color:sel.includes(o)?t.restChipOnColor:t.chipColor,fontSize:12,cursor:"pointer"}}>{o}</button>
-          ))}
-        </div>
-      )}
-      {isRatings&&cat.kind==="rest"&&(<>
-        <Slider label="⭐ Gesamtwertung" value={vals.stars} min={0} max={10} onChange={v=>setV("stars",v)} color={accent} t={t}/>
-        <Slider label="🍜 Essen" value={vals.food} min={0} max={10} onChange={v=>setV("food",v)} color="#2e7d52" t={t}/>
-        <Slider label="💁 Service" value={vals.service} min={0} max={10} onChange={v=>setV("service",v)} color="#3a5a9e" t={t}/>
-        <Slider label="💰 Preis" value={vals.price} min={1} max={5} onChange={v=>setV("price",v)} color="#8a5a2c" display={v=>"€".repeat(v)} t={t}/>
-      </>)}
-      {isRatings&&cat.kind==="whisky"&&(<>
-        <Slider label="⭐ Gesamtgeschmack" value={vals.stars} min={0} max={10} onChange={v=>setV("stars",v)} color={accent} t={t}/>
-        <Slider label="🌫️ Rauchigkeit" value={vals.rauchigkeit} min={0} max={10} onChange={v=>setV("rauchigkeit",v)} color="#5a6472" t={t}/>
-        <Slider label="🍒 Fruchtigkeit" value={vals.fruchtigkeit} min={0} max={10} onChange={v=>setV("fruchtigkeit",v)} color="#a8364e" t={t}/>
-      </>)}
-      {isRatings&&cat.kind==="media"&&(<>
-        <Slider label={(cat.cfg&&cat.cfg.starsLabel)||"⭐ Gesamtwertung"} value={vals.stars} min={0} max={10} onChange={v=>setV("stars",v)} color={accent} t={t}/>
-        <Slider label={(cat.cfg&&cat.cfg.crit1Label)||"Kriterium 1"} value={vals.handlung} min={0} max={10} onChange={v=>setV("handlung",v)} color="#2e7d52" t={t}/>
-        <Slider label={(cat.cfg&&cat.cfg.crit2Label)||"Kriterium 2"} value={vals.spannung} min={0} max={10} onChange={v=>setV("spannung",v)} color="#3a5a9e" t={t}/>
-      </>)}
-      {isRatings&&<textarea value={kommentar} onChange={e=>setKommentar(e.target.value)} placeholder="Kommentar (optional)" rows={2} style={{...inp,resize:"none",fontFamily:"inherit"}}/>}
+      <div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:18,fontWeight:700,color:t.title,marginBottom:16,textAlign:"center"}}>{def.icon} {isRatings?def.texts.addTitle:def.texts.addSuggTitle}</div>
+      <input value={form.name} onChange={e=>set("name",e.target.value)} placeholder={def.texts.nameLabel+" — "+def.texts.namePlaceholder} style={inp}/>
+      <input value={form.field1} onChange={e=>set("field1",e.target.value)} placeholder={def.field1.label+" — "+def.field1.placeholder} style={inp}/>
+      {def.types.options&&<div style={{marginBottom:16}}>
+        <div style={{fontSize:12,color:t.label,marginBottom:4,fontFamily:"'Space Grotesk',sans-serif"}}>{def.types.label}</div>
+        <TypeChips value={form.types} onChange={v=>set("types",v)} options={def.types.options} chipOn={mc.chipOn} chipOnColor={mc.chipOnColor} t={t}/>
+      </div>}
+      {isRatings&&<RatingFields def={def} form={form} setF={set} accent={mc.accent} t={t}/>}
       <button onClick={save} disabled={busy}
-        style={{width:"100%",padding:14,borderRadius:12,background:busy?t.sliderTrack:t.restBtn,color:t.btnColor,border:"none",cursor:"pointer",fontSize:15,fontWeight:700}}>
+        style={{width:"100%",marginTop:12,padding:14,borderRadius:12,background:busy?t.sliderTrack:mc.btn,color:mc.btnColor,border:"none",cursor:"pointer",fontSize:15,fontWeight:700}}>
         {busy?"Speichere…":(isRatings?"Speichern":"Vorschlag speichern")}
       </button>
-      {msg&&<div style={{marginTop:12,fontSize:13,textAlign:"center",color:msg.startsWith("⚠️")?t.danger:t.sub}}>{msg}</div>}
+      {msg&&<div style={{marginTop:12,fontSize:13,textAlign:"center",color:msg.startsWith("💡")||msg.startsWith("⭐")?t.sub:t.danger}}>{msg}</div>}
     </SwipeableSheet>
   );
 }
 // GLOBALE DETAIL-ANSICHT
 export function GlobalDetailSheet({entry,isRatings,t,onClose}){
   const {cat,item,avg}=entry;
-  const sub=subtitleOfCat(cat,item);
-  const critLabels=cat.kind==="rest"
-    ?[["food","🍜 Essen"],["service","💁 Service"],["price","💰 Preis"]]
-    :cat.kind==="whisky"
-    ?[["rauchigkeit","🌫️ Rauchigkeit"],["fruchtigkeit","🍒 Fruchtigkeit"]]
-    :[["handlung",(cat.cfg&&cat.cfg.crit1Short)||"Kriterium 1"],["spannung",(cat.cfg&&cat.cfg.crit2Short)||"Kriterium 2"]];
+  const sub=subtitle(cat,item);
   return(
     <SwipeableSheet onClose={onClose} t={t} zIndex={350}>
       <div style={{textAlign:"center",marginBottom:6}}><span style={{fontSize:40}}>{cat.icon}</span></div>
@@ -141,8 +91,8 @@ export function GlobalDetailSheet({entry,isRatings,t,onClose}){
                 <span style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:16,fontWeight:700,color:t.restAccent}}>{r.stars}<span style={{fontSize:10,color:t.tick}}>/10</span></span>
               </div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap",fontSize:11.5,color:t.sub,marginTop:6}}>
-                {critLabels.map(([k,l])=>(
-                  <span key={k} style={{background:t.innerCard,borderRadius:8,padding:"4px 9px"}}>{l}: {k==="price"?"€".repeat(r[k]||0):(r[k]??"–")}</span>
+                {cat.criteria.map(c=>(
+                  <span key={c.key} style={{background:t.innerCard,borderRadius:8,padding:"4px 9px"}}>{c.short}: {c.format==="euro"?"€".repeat(r[c.key]||0):(r[c.key]??"–")}</span>
                 ))}
               </div>
               {r.kommentar&&<div style={{fontSize:12,color:t.sub,marginTop:6,fontStyle:"italic"}}>„{r.kommentar}"</div>}
@@ -163,7 +113,7 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
   const isRatings=type==="ratings";
   const my=groups.filter(g=>g.members&&g.members[user]);
   const friends=[...new Set(my.flatMap(g=>Object.keys(g.members||{})))];
-  const activeCats=ALL_CATS.filter(c=>my.some(g=>g.categories?.[c.id]));
+  const activeCats=DEFINITIONS.filter(c=>my.some(g=>g.categories?.[c.id]));
   const [loaded,setLoaded]=useState(false);
   const [raw,setRaw]=useState([]);
   const [catF,setCatF]=useState("");
@@ -179,7 +129,7 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
   useEffect(()=>{
     let cancelled=false;
     const get=p=>db.ref(p).get().then(s=>s.val()||{}).catch(()=>({}));
-    Promise.all(activeCats.map(c=>get(isRatings?c.base:c.sugg).then(d=>({cat:c,data:d}))))
+    Promise.all(activeCats.map(c=>get(isRatings?c.paths.items:c.paths.suggestions).then(d=>({cat:c,data:d}))))
       .then(res=>{if(!cancelled){setRaw(res);setLoaded(true);}})
       .catch(()=>{if(!cancelled)setLoaded(true);});
     const tm=setTimeout(()=>setLoaded(true),8000);
@@ -191,9 +141,9 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
     Object.values(data||{}).forEach(it=>{
       if(!it||!it.name)return;
       if(isRatings){
-        const norm=cat.kind==="rest"?normalizeRest(it):it;
+        const norm=normalizeItem(cat,it);
         const vis=restrictToMembers(norm,friends);
-        const avg=avgOfCat(cat,vis);
+        const avg=average(cat,vis);
         if(avg.count>0)items.push({cat,item:vis,avg});
       }else{
         if(it.author&&friends.includes(it.author))items.push({cat,item:it});
@@ -201,7 +151,7 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
     });
   });
   const selCat=activeCats.find(c=>c.id===catF)||null;
-  const meta=selCat?catFilterMeta(selCat):null;
+  const meta=selCat?filterMeta(selCat):null;
   const catItems=selCat?items.filter(x=>x.cat.id===selCat.id):[];
   const opts1=selCat?[...new Set(catItems.map(x=>meta.g1(x.item)).filter(Boolean))].sort():[];
   const opts2=selCat?[...new Set(catItems.flatMap(x=>meta.g2(x.item)))].sort():[];
@@ -210,7 +160,7 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
     &&(!q||x.item.name.toLowerCase().includes(q))
     &&(!selCat||!k1F||meta.g1(x.item)===k1F)
     &&(!selCat||!k2F||meta.g2(x.item).includes(k2F)));
-  const ci=x=>ALL_CATS.findIndex(c=>c.id===x.cat.id);
+  const ci=x=>DEFINITIONS.findIndex(c=>c.id===x.cat.id);
   items.sort((a,b)=>{
     if(sortBy==="cat"){const c=ci(a)-ci(b);if(c!==0)return c;return isRatings?(b.avg.stars-a.avg.stars):a.item.name.localeCompare(b.item.name);}
     if(sortBy==="best")return b.avg.stars-a.avg.stars;
@@ -282,7 +232,7 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
         </SwipeableSheet>
       )}
       {showAdd&&addCat&&(
-        <GlobalAddSheet cat={addCat} user={user} isRatings={isRatings} t={t}
+        <GlobalAddSheet def={addCat} dark={dark} user={user} isRatings={isRatings} t={t}
           onClose={()=>{setAddCat(null);setShowAdd(false);}}
           onSaved={()=>{setAddCat(null);setShowAdd(false);setLoaded(false);setReloadKey(k=>k+1);}}/>
       )}
@@ -332,7 +282,7 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onBack,onLogout}){
             <span style={{fontSize:24}}>{x.cat.icon}</span>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:14.5,fontWeight:600,color:t.title,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{x.item.name}</div>
-              <div style={{fontSize:11.5,color:t.sub,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{[x.cat.label,subtitleOfCat(x.cat,x.item)].filter(Boolean).join(" · ")}</div>
+              <div style={{fontSize:11.5,color:t.sub,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{[x.cat.label,subtitle(x.cat,x.item)].filter(Boolean).join(" · ")}</div>
               {!isRatings&&<div style={{fontSize:11,color:t.tick,marginTop:2}}>von {x.item.author}</div>}
             </div>
             {isRatings&&(
