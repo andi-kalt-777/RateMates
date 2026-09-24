@@ -1,78 +1,51 @@
 #!/usr/bin/env node
 /**
- * Prüft index.html, bevor sie live geht.
+ * Strukturprüfungen, die weder Linter noch Build abdecken.
+ * Läuft als erster Teil von `npm run check` (danach ESLint und vite build).
  *
- * Die App hat keinen Build-Schritt: ein Syntaxfehler fällt sonst erst im Browser
- * auf — als weiße Seite. Dieses Skript kompiliert den <script type="text/babel">
- * Block mit demselben Babel, das auch im Browser läuft.
- *
- *   node scripts/check.js          (oder: npm run check)
+ *   node scripts/check.js
  */
 
-const fs = require("fs");
-const path = require("path");
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const FILE = path.join(__dirname, "..", "index.html");
-
-let babel;
-try {
-  babel = require("@babel/standalone");
-} catch {
-  console.error("❌ @babel/standalone fehlt. Einmalig ausführen:  npm install");
-  process.exit(1);
-}
-
-const html = fs.readFileSync(FILE, "utf8");
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 let failed = false;
 const fail = (msg) => { console.error("❌ " + msg); failed = true; };
 const ok = (msg) => console.log("✓ " + msg);
 
-// --- Babel-Block herausschneiden --------------------------------------------
-const match = html.match(/<script type="text\/babel">([\s\S]*?)<\/script>/);
-if (!match) {
-  fail('Kein <script type="text/babel"> Block gefunden.');
-  process.exit(1);
-}
-const code = match[1];
+// Gesamter App-Quelltext, damit die Prüfungen unabhängig von der Dateiaufteilung sind
+const readAll = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+  const p = path.join(dir, e.name);
+  if (e.isDirectory()) return readAll(p);
+  return /\.(js|jsx)$/.test(e.name) ? [fs.readFileSync(p, "utf8")] : [];
+});
+const code = readAll(path.join(ROOT, "src")).join("\n");
 
-// --- Kompilierung ------------------------------------------------------------
-// Babel ist der maßgebliche Prüfer: es findet fehlende Klammern, abgeschnittene
-// Bearbeitungen und jeden anderen Syntaxfehler zuverlässig.
-try {
-  babel.transform(code, { presets: ["react"] });
-  ok("Babel-Kompilierung erfolgreich");
-} catch (e) {
-  fail("SYNTAXFEHLER:\n   " + e.message.split("\n").slice(0, 8).join("\n   "));
-}
-
-// --- Gepinnte Skript-Versionen ----------------------------------------------
-// Eine ungepinnte Babel-URL hat die App schon einmal tagelang lahmgelegt.
-const pinned = [
-  "react@18.2.0/umd/react.production.min.js",
-  "react-dom@18.2.0/umd/react-dom.production.min.js",
-  "@babel/standalone@7.23.10/babel.min.js",
-  "firebasejs/9.23.0/firebase-app-compat.js",
-  "firebasejs/9.23.0/firebase-database-compat.js",
-  "firebasejs/9.23.0/firebase-auth-compat.js",
-];
-const unpinned = pinned.filter((p) => !html.includes(p));
-if (unpinned.length) {
-  fail("Skript-Version nicht gepinnt: " + unpinned.join(", "));
-} else {
-  ok("Alle Skript-Versionen gepinnt");
-}
+// --- Gepinnte Versionen ---------------------------------------------------------
+// Eine ungepinnte Babel-URL hat die App schon einmal tagelang lahmgelegt. Deshalb
+// stehen alle Abhängigkeiten mit exakter Version in package.json.
+const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
+const loose = Object.entries({ ...pkg.dependencies, ...pkg.devDependencies })
+  .filter(([, v]) => !/^\d+\.\d+\.\d+$/.test(v))
+  .map(([n, v]) => n + "@" + v);
+if (loose.length) fail("Version nicht exakt gepinnt: " + loose.join(", "));
+else ok("Alle Abhängigkeiten exakt gepinnt");
 
 // --- Firebase-Konfiguration --------------------------------------------------
-if (/DEIN_API_KEY|DEIN_PROJEKT_ID/.test(html)) {
+if (/DEIN_API_KEY|DEIN_PROJEKT_ID/.test(code)) {
   fail("Firebase-Konfiguration enthält noch Platzhalter.");
 } else {
   ok("Firebase-Konfiguration gesetzt");
 }
 
 // --- Kategorien: Registry und Definitionen im Gleichklang --------------------
-const defsBlock = html.match(/const CATEGORY_DEFS\s*=\s*\{([\s\S]*?)\n\};/);
-const groupsBlock = html.match(/const CATEGORY_GROUPS\s*=\s*\[([\s\S]*?)\n\];/);
-if (defsBlock && groupsBlock) {
+const defsBlock = code.match(/const CATEGORY_DEFS\s*=\s*\{([\s\S]*?)\n\};/);
+const groupsBlock = code.match(/const CATEGORY_GROUPS\s*=\s*\[([\s\S]*?)\n\];/);
+if (!defsBlock || !groupsBlock) {
+  fail("CATEGORY_DEFS oder CATEGORY_GROUPS nicht gefunden.");
+} else {
   const defIds = [...defsBlock[1].matchAll(/^\s{2}(\w+)\s*:\s*\{/gm)].map((m) => m[1]);
   const grouped = [...groupsBlock[1].matchAll(/cats\s*:\s*\[([^\]]*)\]/g)]
     .flatMap((m) => [...m[1].matchAll(/"(\w+)"/g)].map((x) => x[1]));
@@ -85,7 +58,7 @@ if (defsBlock && groupsBlock) {
   }
 
   // Jede Kategorie braucht ihren Eintrag in ALL_CATS (globale Übersichten)
-  const inRegistry = [...html.matchAll(/\{id:"(\w+)",icon:"[^"]*",label:"[^"]*",base:/g)]
+  const inRegistry = [...code.matchAll(/\{id:"(\w+)",icon:"[^"]*",label:"[^"]*",base:/g)]
     .map((m) => m[1]);
   const notRegistered = defIds.filter((id) => !inRegistry.includes(id));
   if (notRegistered.length) {
@@ -95,7 +68,7 @@ if (defsBlock && groupsBlock) {
   }
 
   // Und ihren Zweig im Mode-Routing
-  const routed = [...html.matchAll(/mode==="(\w+)"/g)].map((m) => m[1]);
+  const routed = [...code.matchAll(/mode==="(\w+)"/g)].map((m) => m[1]);
   const notRouted = defIds.filter(
     (id) => !routed.includes(id) && !["restaurant", "whisky"].includes(id)
   );
@@ -111,10 +84,10 @@ if (defsBlock && groupsBlock) {
 // Kategorie wäre dann sichtbar, aber jede Bewertung schlüge still fehl.
 try {
   const rules = JSON.parse(
-    fs.readFileSync(path.join(__dirname, "..", "database.rules.json"), "utf8")
+    fs.readFileSync(path.join(ROOT, "database.rules.json"), "utf8")
   ).rules;
   const paths = new Set(["restaurants", "suggestions", "whiskies", "whisky_suggestions"]);
-  for (const m of html.matchAll(/fb(?:Base|Sugg)\s*:\s*"(\w+)"/g)) paths.add(m[1]);
+  for (const m of code.matchAll(/fb(?:Base|Sugg)\s*:\s*"(\w+)"/g)) paths.add(m[1]);
   // Gruppeneigene Kategorien liegen unter custom_<id>; dafür steht ein $-Platzhalter
   // in den Regeln. Ein Präfix (endet auf "_") gilt als abgedeckt, wenn es ihn gibt.
   const hasWildcard = Object.keys(rules).some((k) => k.startsWith("$"));
@@ -130,9 +103,8 @@ try {
   fail("database.rules.json fehlt oder ist kein gültiges JSON: " + e.message);
 }
 
-console.log(
-  failed
-    ? "\n❌ Prüfung fehlgeschlagen — bitte NICHT hochladen."
-    : "\n✅ Alles in Ordnung."
-);
-process.exit(failed ? 1 : 0);
+if (failed) {
+  console.log("\n❌ Prüfung fehlgeschlagen — bitte NICHT hochladen.");
+  process.exit(1);
+}
+console.log("✓ Strukturprüfung bestanden, weiter mit ESLint und Build …\n");
