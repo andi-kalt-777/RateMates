@@ -20,6 +20,25 @@ export function typesOf(def,item){
 export const normalizeItem=(def,item)=>def.legacyRestaurant?normalizeRest(item):item;
 export const itemDupKey=(def,item)=>dupKey(item.name,field1Of(def,item));
 export const subtitle=(def,item)=>[field1Of(def,item),typesOf(def,item).join(" & ")].filter(Boolean).join(" · ");
+// Stadt eines Eintrags bei Orts-Kategorien (Restaurants, Cafés …): der Teil vor dem
+// ersten Komma, damit "Köln, Altstadt" und "Köln" zur selben Stadt zählen. Sonst null.
+export function cityOf(def,item){
+  if(!def.field1.place)return null;
+  const c=field1Of(def,item).split(",")[0].trim();
+  return c||null;
+}
+export const cityKey=c=>(c||"").trim().toLowerCase();
+// Städte für die Auswahl: je Schreibweise-Gruppe die häufigste Form, alphabetisch
+export function cityOptions(entries){
+  const counts={};
+  for(const {cat,item} of entries){
+    const c=cityOf(cat,item);if(!c)continue;
+    const k=cityKey(c);
+    counts[k]=counts[k]||{};
+    counts[k][c]=(counts[k][c]||0)+1;
+  }
+  return Object.values(counts).map(v=>Object.entries(v).sort((a,b)=>b[1]-a[1])[0][0]).sort((a,b)=>a.localeCompare(b,"de"));
+}
 // Filter der Übersichten: Beschriftungen und Werte für Feld 1 und Auswahl
 export const filterMeta=def=>({
   l1:def.field1.filterLabel||"Alle",l2:def.types.filterLabel||"Alle",

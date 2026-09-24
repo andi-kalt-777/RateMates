@@ -7,7 +7,8 @@
 // Aufbau eines Eintrags:
 //   id, icon, label (Mehrzahl), title (Kopfzeile in der Gruppe), group (Obergruppe)
 //   paths      Firebase-Pfade für Bewertungen und Vorschläge
-//   field1     Freitextfeld (Stadt, Destillerie, Plattform …): key im Datensatz, legacyKey =
+//   field1     Freitextfeld (Stadt, Destillerie, Plattform …): key im Datensatz; place = ist ein Ort
+//              (Stadtfilter in den Übersichten); legacyKey =
 //              zusätzlich geschriebener Altname (Film: director, Serie: platform)
 //   types      Mehrfachauswahl (max. 3) aus options, key im Datensatz
 //   overall    Gesamtwertung (key "stars", 0–10); position "last" = Regler nach den Kriterien
@@ -58,7 +59,7 @@ export const DEFINITIONS=[
   {
     id:"restaurant",icon:"🍽️",label:"Restaurants",title:"Restaurants",group:"lokal",
     paths:{items:"restaurants",suggestions:"suggestions"},
-    field1:{key:"city",label:"Stadt",placeholder:"z.B. München",filterLabel:"Alle Städte",required:true,prefix:"📍 ",errorText:"Bitte Stadt eingeben"},
+    field1:{key:"city",place:true,label:"Stadt",placeholder:"z.B. München",filterLabel:"Alle Städte",required:true,prefix:"📍 ",errorText:"Bitte Stadt eingeben"},
     types:{key:"cuisines",label:"Art der Küche",options:CUISINES,filterLabel:"Alle Küchen",required:true,max:3,errorText:"Bitte Küche auswählen"},
     overall:{key:"stars",label:"⭐ Sterne",color:"#e8a020",default:7,position:"last"},
     criteria:[
@@ -80,7 +81,7 @@ export const DEFINITIONS=[
   standard({
     id:"cafe",icon:"🍰",label:"Cafés",title:"Café",group:"lokal",
     paths:{items:"cafes",suggestions:"cafe_suggestions"},
-    field1:{label:"Stadt / Ort",placeholder:"z.B. Köln, Altstadt",filterLabel:"Alle Orte"},
+    field1:{place:true,label:"Stadt / Ort",placeholder:"z.B. Köln, Altstadt",filterLabel:"Alle Orte"},
     types:{options:CAFE_TYPES,filterLabel:"Alle Arten"},
     overallLabel:"⭐ Gesamtwertung",
     crit1:{label:"☕ Kaffee & Kuchen",short:"☕ Qualität"},crit2:{label:"🛋️ Ambiente",short:"🛋️ Ambiente"},
@@ -91,7 +92,7 @@ export const DEFINITIONS=[
   standard({
     id:"bar",icon:"🍹",label:"Bars",title:"Bar",group:"lokal",
     paths:{items:"bars",suggestions:"bar_suggestions"},
-    field1:{label:"Stadt / Ort",placeholder:"z.B. Köln, Friesenviertel",filterLabel:"Alle Orte"},
+    field1:{place:true,label:"Stadt / Ort",placeholder:"z.B. Köln, Friesenviertel",filterLabel:"Alle Orte"},
     types:{options:BAR_TYPES,filterLabel:"Alle Arten"},
     overallLabel:"⭐ Gesamtwertung",
     crit1:{label:"🍹 Getränke",short:"🍹 Getränke"},crit2:{label:"🎶 Atmosphäre",short:"🎶 Atmosphäre"},
@@ -102,7 +103,7 @@ export const DEFINITIONS=[
   standard({
     id:"icecream",icon:"🍦",label:"Eisdielen",title:"Eisdielen",group:"lokal",
     paths:{items:"icecreams",suggestions:"icecream_suggestions"},
-    field1:{label:"Stadt / Ort",placeholder:"z.B. Köln, Südstadt",filterLabel:"Alle Orte"},
+    field1:{place:true,label:"Stadt / Ort",placeholder:"z.B. Köln, Südstadt",filterLabel:"Alle Orte"},
     types:{options:ICE_TYPES,filterLabel:"Alle Arten"},
     overallLabel:"⭐ Gesamtwertung",
     crit1:{label:"🍦 Eisqualität",short:"🍦 Qualität"},crit2:{label:"🍨 Auswahl",short:"🍨 Auswahl"},
@@ -113,7 +114,7 @@ export const DEFINITIONS=[
   standard({
     id:"delivery",icon:"🛵",label:"Lieferservices",title:"Lieferservice",group:"lokal",
     paths:{items:"deliveries",suggestions:"delivery_suggestions"},
-    field1:{label:"Stadt / Ort",placeholder:"z.B. Köln",filterLabel:"Alle Orte"},
+    field1:{place:true,label:"Stadt / Ort",placeholder:"z.B. Köln",filterLabel:"Alle Orte"},
     types:{options:DELIVERY_TYPES,filterLabel:"Alle Küchen"},
     overallLabel:"⭐ Gesamtwertung",
     crit1:{label:"🍜 Essensqualität",short:"🍜 Essen"},crit2:{label:"🚀 Lieferzeit / Zuverlässigkeit",short:"🚀 Lieferzeit"},

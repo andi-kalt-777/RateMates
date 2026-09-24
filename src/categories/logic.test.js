@@ -189,3 +189,27 @@ describe("Durchschnitte mit festen Zahlen", () => {
     expect(L.average(DEFINITION_BY_ID.film, { ratings: { A: { stars: 7, handlung: 5, spannung: 2, ratedAt: 1790000000000 } } }).stars).toBe(7);
   });
 });
+
+describe("Stadtfilter", () => {
+  const R = DEFINITION_BY_ID.restaurant, C = DEFINITION_BY_ID.cafe, F = DEFINITION_BY_ID.film, W = DEFINITION_BY_ID.whisky;
+  it("Orts-Kategorien: Restaurants, Cafés, Bars, Eisdielen, Lieferservices", () => {
+    expect(DEFINITIONS.filter((d) => d.field1.place).map((d) => d.id)).toEqual(["restaurant", "cafe", "bar", "icecream", "delivery"]);
+  });
+  it("Stadt ist der Teil vor dem ersten Komma", () => {
+    expect(L.cityOf(R, { city: " Köln " })).toBe("Köln");
+    expect(L.cityOf(C, { field1: "Köln, Altstadt" })).toBe("Köln");
+    expect(L.cityOf(C, { field1: "" })).toBeNull();
+  });
+  it("andere Kategorien haben keine Stadt", () => {
+    expect(L.cityOf(F, { field1: "Netflix" })).toBeNull();
+    expect(L.cityOf(W, { distillery: "Islay, Schottland" })).toBeNull();
+  });
+  it("Auswahl fasst Schreibweisen zusammen und nimmt die häufigste", () => {
+    const entries = [
+      { cat: R, item: { city: "Köln" } }, { cat: R, item: { city: "köln" } }, { cat: C, item: { field1: "Köln, Südstadt" } },
+      { cat: R, item: { city: "Aachen" } }, { cat: F, item: { field1: "Netflix" } }, { cat: R, item: { city: "" } },
+    ];
+    expect(L.cityOptions(entries)).toEqual(["Aachen", "Köln"]);
+    expect(L.cityKey(" KÖLN ")).toBe("köln");
+  });
+});

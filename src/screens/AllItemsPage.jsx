@@ -1,11 +1,16 @@
 import {useState} from "react";
 import {restrictToMembers} from "../lib/ratings.js";
 import {DEFINITIONS} from "../categories/index.js";
-import {average,subtitle,filterMeta} from "../categories/logic.js";
+import {average,subtitle,filterMeta,cityOf,cityKey,cityOptions} from "../categories/logic.js";
 import {useCategoryData} from "../lib/useCategoryData.js";
 import {UserMenu} from "../components/UserMenu.jsx";
 import {Page,PageHeader,PlusButton,Chips} from "../components/PageHeader.jsx";
 import {AddFlow,GlobalAddSheet,GlobalDetailSheet} from "../components/GlobalSheets.jsx";
+
+// Gewählte Stadt gilt für Bewertungen und Vorschläge und bleibt auf diesem Gerät gespeichert
+const CITY_KEY="rm_city";
+const loadCity=()=>{try{return localStorage.getItem(CITY_KEY)||"";}catch{return "";}};
+const saveCity=c=>{try{if(c)localStorage.setItem(CITY_KEY,c);else localStorage.removeItem(CITY_KEY);}catch{}};
 
 // BEWERTUNGEN bzw. VORSCHLÄGE: alles aus allen eigenen Gruppen
 export function AllItemsPage({type,user,groups,dark,setDark,t,onLogout}){
@@ -20,6 +25,12 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onLogout}){
   const [k2F,setK2F]=useState("");
   const [sortBy,setSortBy]=useState(isRatings?"best":"new");
   const [search,setSearch]=useState("");
+  const [city,setCityState]=useState(loadCity);
+  // Bei gewählter Stadt passen nur Orts-Kategorien; eine andere gewählte Kategorie wird aufgehoben
+  const setCity=c=>{
+    setCityState(c);saveCity(c);setK1F("");
+    if(c&&catF&&!activeDefs.find(d=>d.id===catF)?.field1.place)setCatF("");
+  };
   const chooseCat=id=>{setCatF(id);setK1F("");setK2F("");};
 
   let items=[];
@@ -32,6 +43,10 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onLogout}){
   }else{
     for(const {def,item} of data.suggestions)if(item.author&&friends.includes(item.author))items.push({cat:def,item});
   }
+  // Städte aus allen Orts-Kategorien; eine gespeicherte Stadt ohne Einträge bleibt wählbar
+  const cities=cityOptions(items);
+  if(city&&!cities.some(c=>cityKey(c)===cityKey(city)))cities.unshift(city);
+  const chipDefs=city?activeDefs.filter(d=>d.field1.place):activeDefs;
   const selCat=activeDefs.find(c=>c.id===catF)||null;
   const meta=selCat?filterMeta(selCat):null;
   const catItems=selCat?items.filter(x=>x.cat.id===selCat.id):[];
@@ -39,6 +54,7 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onLogout}){
   const opts2=selCat?[...new Set(catItems.flatMap(x=>meta.g2(x.item)))].sort():[];
   const q=search.trim().toLowerCase();
   items=items.filter(x=>(!catF||x.cat.id===catF)
+    &&(!city||cityKey(cityOf(x.cat,x.item))===cityKey(city))
     &&(!q||x.item.name.toLowerCase().includes(q))
     &&(!selCat||!k1F||meta.g1(x.item)===k1F)
     &&(!selCat||!k2F||meta.g2(x.item).includes(k2F)));
@@ -47,6 +63,13 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onLogout}){
     if(sortBy==="cat"){const c=ci(a)-ci(b);if(c!==0)return c;return isRatings?(b.avg.stars-a.avg.stars):a.item.name.localeCompare(b.item.name);}
     if(sortBy==="best")return b.avg.stars-a.avg.stars;
     if(sortBy==="count")return b.avg.count-a.avg.count;
+    if(sortBy==="city"){
+      // Einträge ohne Stadt (Filme, Whisky …) ans Ende
+      const ca=cityOf(a.cat,a.item),cb=cityOf(b.cat,b.item);
+      if(!ca!==!cb)return ca?-1:1;
+      const c=(ca||"").localeCompare(cb||"","de");
+      return c!==0?c:a.item.name.localeCompare(b.item.name);
+    }
     if(sortBy==="new")return String(b.item.id).localeCompare(String(a.item.id));
     return a.item.name.localeCompare(b.item.name);
   });
@@ -67,9 +90,15 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onLogout}){
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Suchen…" aria-label={isRatings?"Bewertungen durchsuchen":"Vorschläge durchsuchen"}
           style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:15,color:t.inputColor}}/>
       </div>
-      <Chips t={t} value={catF} onChange={chooseCat} items={[["","Alle"],...activeDefs.map(d=>[d.id,d.icon+" "+d.label])]}/>
+      <Chips t={t} value={catF} onChange={chooseCat} items={[["","Alle"],...chipDefs.map(d=>[d.id,d.icon+" "+d.label])]}/>
       <div className="hscroll" style={{display:"flex",gap:8,marginBottom:14,overflowX:"auto",paddingBottom:2,alignItems:"center"}}>
-        {selCat&&opts1.length>0&&(
+        {cities.length>0&&(
+          <select value={city} onChange={e=>setCity(e.target.value)} aria-label="Stadt" style={{...selStyle,fontWeight:600,...(city?selOn:{})}}>
+            <option value="">📍 Alle Städte</option>
+            {cities.map(c=><option key={c} value={c}>📍 {c}</option>)}
+          </select>
+        )}
+        {selCat&&!selCat.field1.place&&opts1.length>0&&(
           <select value={k1F} onChange={e=>setK1F(e.target.value)} style={{...selStyle,...(k1F?selOn:{})}}>
             <option value="">{meta.l1}</option>
             {opts1.map(v=><option key={v} value={v}>{v}</option>)}
@@ -86,11 +115,13 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onLogout}){
           {isRatings?(<>
             <option value="best">Beste zuerst</option>
             <option value="cat">Nach Kategorie</option>
+            <option value="city">Nach Stadt</option>
             <option value="count">Meiste Wertungen</option>
             <option value="name">Name A–Z</option>
           </>):(<>
             <option value="new">Neueste zuerst</option>
             <option value="cat">Nach Kategorie</option>
+            <option value="city">Nach Stadt</option>
             <option value="name">Name A–Z</option>
           </>)}
         </select>
