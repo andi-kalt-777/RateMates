@@ -6,3 +6,6 @@ select option{background:white;color:#1b1713}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#c9c4bc;border-radius:2px}
+/* Waagerecht scrollbare Reihen (Chips, Filter) ohne sichtbare Scrollleiste */
+.hscroll{scrollbar-width:none}
+.hscroll::-webkit-scrollbar{display:none}

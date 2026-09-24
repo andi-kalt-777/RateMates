@@ -8,7 +8,8 @@ import {
 } from "../categories/logic.js";
 import {GLASS_MODE,GOLD_MODE} from "../theme.js";
 import {Slider,Stars,Badge,Toast,TypeChips,FilterBar,SwipeableSheet} from "../components/ui.jsx";
-import {AppHeader} from "../components/AppHeader.jsx";
+import {initialsOf} from "../components/UserMenu.jsx";
+import {PlusButton,Chips} from "../components/PageHeader.jsx";
 
 // EINE ANSICHT FÜR ALLE KATEGORIEN — Aufbau, Felder und Texte kommen aus der Definition
 const euro=n=>"€".repeat(n||0);
@@ -158,10 +159,12 @@ function MasterFields({def,form,set,errors,setErrors,listId,field1Options,mc,t})
   );
 }
 
-export function CategoryApp({def,user,dark,setDark,mode,setMode,modes,t,group,members,onBack,isAdmin,onSettings,onLogout}){
+export function CategoryApp({def,user,dark,mode,setMode,modes,t,group,members,onBack,isAdmin,onSettings,section,onSection}){
   const mc=dark?GOLD_MODE:GLASS_MODE;
-  const [view,setView]=useState("list");
-  const [activeSection,setSection]=useState("list");
+  const [view,setView]=useState(section||"list");
+  // Bewertungen oder Vorschläge: liegt in der App, damit es beim Kategoriewechsel bleibt
+  const activeSection=section||"list";
+  const setSection=onSection;
   const [items,setItems]=useState([]);
   const [suggestions,setSuggestions]=useState([]);
   const [loading,setLoading]=useState(true);
@@ -269,20 +272,51 @@ export function CategoryApp({def,user,dark,setDark,mode,setMode,modes,t,group,me
   const sf=(k,v)=>setSuggForm(p=>({...p,[k]:v}));
   const navTo=s=>{setSection(s);setView(s);setSelected(null);setSuggSelected(null);};
   const navAdd=()=>{if(activeSection==="list"){setForm(emptyForm(def));setEditingId(null);setErrors({});setSuggToConvert(null);setView("add");}else{setSuggForm(emptySuggForm());setSuggErrors({});setView("add-suggestion");}};
-  const navActive=view==="list"||view==="rate";
-  const suggActive=view==="suggestions";
-  const addActive=view==="add"||view==="add-suggestion";
   const btn={width:"100%",padding:16,borderRadius:14,background:saving?"#ccc":mc.btn,color:mc.btnColor,fontSize:16,fontWeight:700,border:"none",cursor:saving?"not-allowed":"pointer",fontFamily:"'Space Grotesk',sans-serif",opacity:saving?0.7:1};
   const back={background:"none",border:"none",fontSize:20,cursor:"pointer",color:t.sub};
   const h2={fontFamily:"'Space Grotesk',sans-serif",fontSize:20,fontWeight:700,color:t.title};
   const empty=(icon,text)=>(<div style={{textAlign:"center",padding:"60px 20px",color:t.empty}}><div style={{fontSize:48}}>{icon}</div><div style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:18,marginTop:12,color:t.title}}>{text}</div></div>);
-  if(loading)return(<div style={{minHeight:"100vh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}><div style={{fontSize:48}}>{def.icon}</div><div style={{fontFamily:"'Space Grotesk',sans-serif",color:t.sub,fontSize:14}}>Lade…</div></div>);
+  // Kopf der Gruppe: zurück, Einstellungen, Name, Mitglieder, Umschalter, Kategorie-Chips
+  const shownMembers=members.slice(0,4);
+  const segBtn=(id,label)=>{
+    const on=activeSection===id;
+    return <button role="tab" aria-selected={on} onClick={()=>navTo(id)} style={{minHeight:38,borderRadius:10,border:"none",background:on?t.segOn:"transparent",color:on?t.title:t.sub,fontSize:13.5,fontWeight:700,cursor:"pointer",boxShadow:on?t.segShadow:"none"}}>{label}</button>;
+  };
+  const groupHeader=(
+    <div style={{padding:"10px 16px 0"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:4,minHeight:44,background:"none",border:"none",color:t.link,fontSize:15,fontWeight:600,cursor:"pointer",padding:0}}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>Gruppen
+        </button>
+        {isAdmin&&<button onClick={onSettings} aria-label="Gruppen-Einstellungen" title="Gruppen-Einstellungen" style={{width:44,height:44,borderRadius:22,border:`1px solid ${t.cardBorder}`,background:t.card,color:t.title,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>}
+      </div>
+      <div style={{display:"flex",alignItems:"flex-end",gap:12,margin:"4px 0 14px"}}>
+        <div style={{flex:1,minWidth:0}}>
+          <h1 style={{margin:0,fontFamily:"'Space Grotesk',sans-serif",fontSize:26,fontWeight:700,letterSpacing:"-0.01em",color:t.title}}>{group.name}</h1>
+          <div style={{fontSize:13,color:t.sub,marginTop:2}}>{[group.topic,members.length+" Mitglied"+(members.length!==1?"er":""),isAdmin?"du bist Admin":null].filter(Boolean).join(" · ")}</div>
+        </div>
+        <div style={{display:"flex",flexShrink:0,paddingLeft:8}} aria-label={"Mitglieder: "+members.join(", ")}>
+          {shownMembers.map(m=>(
+            <span key={m} title={m} style={{width:30,height:30,marginLeft:-8,borderRadius:15,border:`2px solid ${t.bg}`,background:m===user?t.accent:t.tile,color:m===user?t.onAccent:t.title,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10.5,fontWeight:700}}>{initialsOf(m)}</span>
+          ))}
+          {members.length>shownMembers.length&&<span style={{width:30,height:30,marginLeft:-8,borderRadius:15,border:`2px solid ${t.bg}`,background:t.tile,color:t.title,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10.5,fontWeight:700}}>+{members.length-shownMembers.length}</span>}
+        </div>
+      </div>
+      <div role="tablist" aria-label="Ansicht" style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:4,padding:4,borderRadius:14,background:t.segBg,marginBottom:12}}>
+        {segBtn("list","Bewertungen")}{segBtn("suggestions","Vorschläge")}
+      </div>
+      {modes.length>1&&<Chips t={t} value={mode} onChange={setMode} items={modes.map(([id,icon,label])=>[id,icon+" "+label])}/>}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+        <span style={{fontSize:12.5,color:t.sub}}>{activeSection==="list"?visible.length+" bewertet":visibleSugg.length+" Vorschl"+(visibleSugg.length!==1?"äge":"ag")}</span>
+        <PlusButton t={t} label={activeSection==="list"?def.texts.addTitle:def.texts.addSuggTitle} onClick={navAdd}/>
+      </div>
+    </div>
+  );  if(loading)return(<div style={{minHeight:"100vh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}><div style={{fontSize:48}}>{def.icon}</div><div style={{fontFamily:"'Space Grotesk',sans-serif",color:t.sub,fontSize:14}}>Lade…</div></div>);
   return(
-    <div style={{minHeight:"100vh",background:t.bg,maxWidth:440,margin:"0 auto",position:"relative",paddingBottom:92,transition:"background 0.3s"}}>
-      <AppHeader user={user} dark={dark} setDark={setDark} mode={mode} setMode={setMode} modes={modes} t={t} onLogout={onLogout}
-        title={def.icon+" "+def.title+" · "+group.name}
-        subtitle={visible.length+" bewertet · "+visibleSugg.length+" Vorschlag"+(visibleSugg.length!==1?"e":"")}
-        headerBg={mc.headerBg} headerSub={mc.headerSub} onBack={onBack} isAdmin={isAdmin} onSettings={onSettings}/>
+    <div style={{minHeight:"100vh",background:t.bg,maxWidth:440,margin:"0 auto",position:"relative",paddingBottom:"calc(100px + env(safe-area-inset-bottom))",transition:"background 0.3s"}}>
+      {(view==="list"||view==="suggestions")&&groupHeader}
       {view==="list"&&(
         <div style={{padding:"20px 16px"}}>
           <FilterBar filter={iFilter} setFilter={setIFilter} col1={field1Vals} col2={hasTypes?allTypes:[]} col1Label={def.field1.filterLabel} col2Label={def.types.filterLabel} extra={[["author","Alle Bewerter",allRaters]]} filterOn={mc.filterOn} filterOnColor={mc.filterOnColor} t={t}/>
@@ -327,15 +361,6 @@ export function CategoryApp({def,user,dark,setDark,mode,setMode,modes,t,group,me
           <button onClick={handleSaveRating} disabled={saving} style={btn}>{saving?"Speichert…":"Wertung speichern"}</button>
         </div>
       )}
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:440,background:t.navBg,borderTop:`1px solid ${t.navBorder}`,display:"flex",boxShadow:`0 -4px 20px ${t.navShadow}`,transition:"background 0.3s"}}>
-        {[["list",navActive,()=>navTo("list"),def.icon,def.texts.listLabel+"\nÜbersicht"],["sugg",suggActive,()=>navTo("suggestions"),"💡",def.texts.listLabel+"\nVorschläge"],["add-btn",addActive,navAdd,"➕","Hinzufügen"]].map(([key,active,onClick,icon,label])=>(
-          <button key={key} onClick={onClick} style={{flex:1,padding:"11px 4px 16px",border:"none",background:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-            <span style={{fontSize:20}}>{icon}</span>
-            <span style={{fontSize:9,color:active?mc.navActive:t.navInactive,fontWeight:active?700:400,textAlign:"center",lineHeight:1.25,whiteSpace:"pre-line"}}>{label}</span>
-            {active&&<div style={{width:20,height:2,background:mc.navActive,borderRadius:1,marginTop:1}}/>}
-          </button>
-        ))}
-      </div>
       <ItemModal def={def} item={selected} user={user} onClose={()=>setSelected(null)} onDelete={handleDelete} onEdit={handleEdit} onRate={startRate} t={t} mc={mc}/>
       <SuggModal def={def} s={suggSelected} user={user} onClose={()=>setSuggSelected(null)} onDelete={handleDeleteSugg} onConvert={handleConvertSugg} t={t} mc={mc}/>
       <Toast msg={toast} color={mc.toast} textColor={mc.toastColor}/>

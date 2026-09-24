@@ -6,7 +6,9 @@ import {LoginScreen} from "./screens/LoginScreen.jsx";
 import {GroupsOverview} from "./screens/GroupsOverview.jsx";
 import {GroupSettingsSheet} from "./components/GroupSettingsSheet.jsx";
 import {CategoryApp} from "./apps/CategoryApp.jsx";
-import {HomePage} from "./screens/HomePage.jsx";
+import {Dashboard} from "./screens/Dashboard.jsx";
+import {CategoriesPage} from "./screens/CategoriesPage.jsx";
+import {TabBar} from "./components/TabBar.jsx";
 import {AllItemsPage} from "./screens/AllItemsPage.jsx";
 
 // TOP-LEVEL APP
@@ -38,7 +40,8 @@ export function App(){
   const [mode,setMode]=useState(null);
   const [showSettings,setShowSettings]=useState(false);
   const [pendingInvite,setPendingInvite]=useState(readInviteFromUrl());
-  const [page,setPage]=useState("home");
+  const [tab,setTab]=useState("start");
+  const [groupSection,setGroupSection]=useState("list");
   const [inviteMsg,setInviteMsg]=useState("");
   const t=dark?DARK:LIGHT;
 
@@ -62,12 +65,12 @@ export function App(){
     if(!g){setInviteMsg("⚠️ Diese Einladung ist ungültig oder die Gruppe existiert nicht mehr.");setPendingInvite(null);clearInviteHash();return;}
     if(g.members&&g.members[user]){
       // schon Mitglied -> einfach öffnen
-      setActiveGroupId(g.id);setMode(null);setPage("groups");setPendingInvite(null);clearInviteHash();return;
+      setActiveGroupId(g.id);setMode(null);setGroupSection("list");setTab("groups");setPendingInvite(null);clearInviteHash();return;
     }
     (async()=>{
       try{
         await db.ref("groups/"+g.id+"/members/"+user).set("member");
-        setActiveGroupId(g.id);setMode(null);setPage("groups");
+        setActiveGroupId(g.id);setMode(null);setGroupSection("list");setTab("groups");
         setInviteMsg("✅ Du bist der Gruppe „"+g.name+"“ beigetreten!");
         setTimeout(()=>setInviteMsg(""),3500);
       }catch{setInviteMsg("⚠️ Beitritt fehlgeschlagen. Bitte erneut versuchen.");}
@@ -88,38 +91,40 @@ export function App(){
   if(!user)return <LoginScreen onLogin={setUser} invitePending={!!pendingInvite}/>;
   if(!groupsLoaded)return <LoadingScreen t={t}/>;
 
-  // Keine Gruppe gewählt: Hauptseite bzw. globale Ansichten
-  const doLogout=()=>{auth.signOut().catch(()=>{});localStorage.removeItem("rmg_user");setUser(null);setPage("home");};
-  if(!activeGroup){
-    if(page==="ratings")return <AllItemsPage type="ratings" user={user} groups={groups} dark={dark} setDark={setDark} t={t} onBack={()=>setPage("home")} onLogout={doLogout}/>;
-    if(page==="suggestions")return <AllItemsPage type="suggestions" user={user} groups={groups} dark={dark} setDark={setDark} t={t} onBack={()=>setPage("home")} onLogout={doLogout}/>;
-    if(page==="groups"){
-      return <GroupsOverview user={user} groups={groups} dark={dark} setDark={setDark} t={t} inviteMsg={inviteMsg}
-        onLogout={doLogout} onHome={()=>setPage("home")}
-        onOpen={g=>{setActiveGroupId(g.id);setMode(null);}}/>;
-    }
-    return <HomePage user={user} dark={dark} setDark={setDark} t={t} onNav={setPage} onLogout={doLogout}/>;
-  }
-
-  const members=Object.keys(activeGroup.members||{});
-  const isAdmin=activeGroup.members?.[user]==="admin";
-  const modes=modesForGroup(activeGroup);
-  const onBack=()=>{setActiveGroupId(null);setMode(null);};
-  const onSettings=()=>setShowSettings(true);
-  const shared={user,dark,setDark,mode,setMode,modes,t,group:activeGroup,members,onBack,isAdmin,onSettings,onLogout:doLogout};
-
-  // Bereich der Gruppe: Standard-Kategorie oder gruppeneigene (c:<id>)
-  const customCat=mode&&mode.startsWith("c:")?Object.values(activeGroup.custom||{}).find(c=>c.id===mode.slice(2)):null;
-  const def=customCat?customDefinition(customCat):DEFINITION_BY_ID[mode];
+  const doLogout=()=>{auth.signOut().catch(()=>{});localStorage.removeItem("rmg_user");setUser(null);setTab("start");setActiveGroupId(null);};
+  // Hauptbereiche über die Leiste unten; ein erneuter Tipp auf "Gruppen" schließt die offene Gruppe
+  const goTab=x=>{
+    if(x==="groups"&&tab==="groups"){setActiveGroupId(null);setMode(null);}
+    setTab(x);window.scrollTo(0,0);
+  };
+  const common={user,dark,setDark,t,onLogout:doLogout};
   let content;
-  if(def)content=<CategoryApp key={def.id} {...shared} def={def}/>;
-  else if(mode&&mode.startsWith("c:"))content=<div style={{padding:40,textAlign:"center",color:t.sub}}>Kategorie nicht gefunden.</div>;
-  else content=<div style={{minHeight:"100vh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",color:t.sub}}>Lade Bereich…</div>;
+  if(tab==="start")content=<Dashboard {...common} groups={groups} onTab={goTab}/>;
+  else if(tab==="ratings")content=<AllItemsPage key="ratings" type="ratings" {...common} groups={groups}/>;
+  else if(tab==="sugg")content=<AllItemsPage key="sugg" type="suggestions" {...common} groups={groups}/>;
+  else if(tab==="cats")content=<CategoriesPage {...common}/>;
+  else if(!activeGroup){
+    content=<GroupsOverview {...common} groups={groups} inviteMsg={inviteMsg}
+      onOpen={g=>{setActiveGroupId(g.id);setMode(null);setGroupSection("list");window.scrollTo(0,0);}}/>;
+  }else{
+    const members=Object.keys(activeGroup.members||{});
+    const isAdmin=activeGroup.members?.[user]==="admin";
+    const modes=modesForGroup(activeGroup);
+    const onBack=()=>{setActiveGroupId(null);setMode(null);};
+    // Bereich der Gruppe: Standard-Kategorie oder gruppeneigene (c:<id>)
+    const customCat=mode&&mode.startsWith("c:")?Object.values(activeGroup.custom||{}).find(c=>c.id===mode.slice(2)):null;
+    const def=customCat?customDefinition(customCat):DEFINITION_BY_ID[mode];
+    if(def)content=<CategoryApp key={def.id} {...common} def={def} mode={mode} setMode={setMode} modes={modes} group={activeGroup} members={members}
+      onBack={onBack} isAdmin={isAdmin} onSettings={()=>setShowSettings(true)} section={groupSection} onSection={setGroupSection}/>;
+    else if(mode&&mode.startsWith("c:"))content=<div style={{padding:40,textAlign:"center",color:t.sub}}>Kategorie nicht gefunden.</div>;
+    else content=<div style={{minHeight:"100vh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",color:t.sub}}>{modes.length?"Lade Bereich…":"Diese Gruppe hat noch keine Kategorien."}</div>;
+  }
 
   return(
     <>
       {content}
-      {showSettings&&<GroupSettingsSheet group={activeGroup} user={user} onClose={()=>setShowSettings(false)} t={t}/>}
+      {showSettings&&activeGroup&&<GroupSettingsSheet group={activeGroup} user={user} onClose={()=>setShowSettings(false)} t={t}/>}
+      <TabBar tab={tab} onTab={goTab} t={t}/>
     </>
   );
 }

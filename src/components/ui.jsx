@@ -61,7 +61,7 @@ export function FilterBar({filter,setFilter,col1,col2,col1Label,col2Label,extra=
         {filter.search&&<button onClick={()=>setFilter(p=>({...p,search:""}))} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",fontSize:16,cursor:"pointer",color:t.sub}}>×</button>}
       </div>
       {dropdowns.some(([,,opts])=>opts.length>0)&&(
-        <div style={{display:"flex",gap:8,marginBottom:12,overflowX:"auto",paddingBottom:4}}>
+        <div className="hscroll" style={{display:"flex",gap:8,marginBottom:12,overflowX:"auto",paddingBottom:4}}>
           {dropdowns.map(([key,ph,opts])=>(
             <select key={key} value={filter[key]||""} onChange={e=>setFilter(p=>({...p,[key]:e.target.value}))}
               style={{padding:"7px 10px",borderRadius:20,border:`1px solid ${filter[key]?filterOn:t.filterBorder}`,background:filter[key]?filterOn:t.filterBg,color:filter[key]?filterOnColor:t.filterColor,fontSize:12,cursor:"pointer",outline:"none",flexShrink:0}}>
