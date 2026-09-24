@@ -54,5 +54,19 @@ Nutzer in der Firebase-Konsole unter Authentication → Nutzer gelöscht werden
 (das Skript nennt die Adresse). Beim nächsten Login zieht das Konto automatisch
 wieder um; das Startpasswort wird dann in der App geändert.
 
+## Kategorie-Wünsche
+
+Im Reiter Kategorien kann jeder eine neue Kategorie wünschen. Die Wünsche sind in
+der App für niemanden sichtbar, auch nicht für den Admin. Ausgewertet wird am PC
+mit angemeldeter Firebase CLI:
+
+```bash
+npm run wishes
+```
+
+Das zeigt eine Rangliste: Anzahl, Wunsch, wer ihn hatte, Anmerkungen. Gleiche
+Wünsche in anderer Schreibweise zählen zusammen, jede Person einmal. Umgesetzt wird
+ein Wunsch als neue Kategorie (siehe „Kategorien hinzufügen" in `CLAUDE.md`).
+
 `CLAUDE.md` enthält die Projektkonventionen für die Arbeit mit Claude Code,
 `UMZUG.md` die Einrichtungsanleitung, `ROADMAP.md` den Fahrplan zur Store-App.

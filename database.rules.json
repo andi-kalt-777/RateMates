@@ -40,8 +40,18 @@
     },
 
     "category_requests": {
-      ".read": "auth != null",
-      ".write": "auth != null"
+      "$key": {
+        "name": {
+          ".write": "auth != null && !data.exists() && root.child('uids').hasChild(auth.uid)",
+          ".validate": "newData.isString() && newData.val().length <= 60"
+        },
+        "users": {
+          "$user": {
+            ".write": "auth != null && root.child('uids').child(auth.uid).val() === $user && $key.length <= 60",
+            ".validate": "newData.val() === true || (newData.isString() && newData.val().length <= 300)"
+          }
+        }
+      }
     },
 
     "friends": {

@@ -68,6 +68,10 @@ Antworte mit Andreas immer auf **Deutsch**.
   Kategorien zeigt die App `WelcomeCategories`. Die alten Daten unter `groups/`
   werden nicht mehr gelesen und bleiben nur als Rückweg liegen (Umzug:
   `scripts/migrate-friends.mjs`).
+- **Kategorie-Wünsche** (`category_requests/<Schlüssel>/users/<Name>`, Logik in
+  `lib/wishes.js`): jeder schreibt nur seinen eigenen, in der App liest sie niemand.
+  Andreas wertet sie am PC mit `npm run wishes` aus und will ausdrücklich **keinen
+  Admin-Bereich in der App** — auch später nicht.
 
 ## Nach jeder Änderung
 

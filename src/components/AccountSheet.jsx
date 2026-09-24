@@ -3,6 +3,7 @@ import {firebase,db,auth} from "../firebase.js";
 import {authEmail,nameKey,hasRealEmail,validEmail,readOnce,loginError,NO_ACCOUNT_CODES,authErrorMsg} from "../lib/auth.js";
 import {DEFINITIONS} from "../categories/index.js";
 import {removeFriendUpdate,declineRequestUpdate,cancelRequestUpdate} from "../lib/friends.js";
+import {removeWishesUpdate} from "../lib/wishes.js";
 import {SwipeableSheet} from "./ui.jsx";
 
 // Passwort ändern und Konto löschen (für alle Benutzer)
@@ -77,8 +78,9 @@ export function AccountSheet({user,onClose,t}){
         const suggs=(await readOnce(sugg))||{};
         for(const [id,s] of Object.entries(suggs)){if(s.author===user)await db.ref(sugg+"/"+id+"/author").remove().catch(()=>{});}
       }
-      const reqs=(await readOnce("category_requests"))||{};
-      for(const [k,r] of Object.entries(reqs)){if(r.users&&r.users[user])await db.ref("category_requests/"+k+"/users/"+user).remove().catch(()=>{});}
+      // Eigene Kategorie-Wünsche (die Liste ist nicht lesbar, der Verweis im Profil schon)
+      const wishes=Object.keys((await readOnce("users/"+user+"/wishes"))||{});
+      if(wishes.length)await db.ref().update(removeWishesUpdate(user,wishes)).catch(()=>{});
       // Freundschaften und offene Anfragen auf beiden Seiten
       const upd={};
       for(const f of Object.keys((await readOnce("friends/"+user))||{}))Object.assign(upd,removeFriendUpdate(user,f));
