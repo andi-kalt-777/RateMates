@@ -78,8 +78,8 @@ nichts sichtbar.
 - [x] Vite + React einrichten, gepinnte Abhängigkeiten über `package.json`
       (24.09.2026; Firebase vorerst weiter als compat-SDK 9.23.0, Wechsel aufs
       modulare SDK spart später gut 300 kB)
-- [ ] Code auf Dateien verteilen: Komponenten, Kategorien, Firebase-Zugriff,
-      Theme, Hilfsfunktionen
+- [x] Code auf Dateien verteilen: Komponenten, Kategorien, Firebase-Zugriff,
+      Theme, Hilfsfunktionen (24.09.2026, 18 Dateien unter `src/`)
 - [x] Logos als eigene PNG-Dateien statt Base64 (24.09.2026)
 - [ ] Kategorien datengetrieben: eine Konfigurationsdatei statt acht Stellen
 - [ ] Automatische Tests für Rechenlogik (Durchschnitte, Duplikate,

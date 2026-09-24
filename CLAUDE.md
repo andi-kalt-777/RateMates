@@ -6,8 +6,13 @@ Antworte mit Andreas immer auf **Deutsch**.
 ## Harte Rahmenbedingungen
 
 - **Vite-Projekt** mit React 18. Einstieg `index.html` → `src/main.jsx` →
-  `src/App.jsx` (noch fast der ganze App-Code, wird in Phase 1 aufgeteilt).
-  Firebase-Zugang in `src/firebase.js`, Logos in `src/assets/`.
+  `src/App.jsx` (Anmeldung, Einladungen, Routing). Aufteilung unter `src/`:
+  `firebase.js` (Zugang), `categories.js` (Kategorien, Konfigurationen, Registry),
+  `theme.js` (Farben), `lib/auth.js` (Anmelde-Helfer), `lib/ratings.js`
+  (Durchschnitte, Duplikate, Mitgliederfilter, `stamped`), `apps/` (Restaurant-,
+  Whisky- und generische Media-Ansicht einer Gruppe), `screens/` (ganze Seiten),
+  `components/` (Sheets, Menüs, `ui.jsx` mit Slider/Stars/SwipeableSheet …),
+  Logos in `assets/`. Jede Datei exportiert ihre Funktionen benannt.
   `npm run dev` startet die lokale Vorschau (http://localhost:5173/RateMates/).
 - **Versionen bleiben exakt gepinnt** in `package.json` (react 18.2.0, react-dom
   18.2.0, firebase 9.23.0, Werkzeuge ebenso), `package-lock.json` ist versioniert.
@@ -57,13 +62,14 @@ Alle Kategorien außer Restaurant und Whisky laufen generisch über `MediaApp` m
 einem CONFIG-Objekt. Eine neue Kategorie muss an **acht** Stellen verdrahtet werden —
 wird eine vergessen, fehlt sie stillschweigend an einer Stelle der Oberfläche:
 
-1. `CATEGORY_DEFS` — Icon und Label
+1. `CATEGORY_DEFS` — Icon und Label (1.–5. in `src/categories.js`)
 2. `CATEGORY_GROUPS` — Zuordnung zu einer der Obergruppen
 3. `<NAME>_TYPES` — Auswahlliste für Sorten/Genres
 4. `<NAME>_CONFIG` — Labels, Kriterien, Firebase-Pfade
 5. `ALL_CATS` — Registry für die globalen Übersichten (inkl. `cfg:`)
-6. Formular-Defaults im Gruppenformular (**zwei** Stellen)
-7. Mode-Routing in der App-Komponente
+6. Formular-Defaults im Gruppenformular (**zwei** Stellen in
+   `src/screens/GroupsOverview.jsx`)
+7. Mode-Routing in `src/App.jsx` (Import der `_CONFIG` nicht vergessen)
 8. `database.rules.json` — je ein Block für `fbBase` und `fbSugg`, danach
    `firebase deploy --only database`
 
