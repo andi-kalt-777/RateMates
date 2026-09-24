@@ -110,8 +110,8 @@ export function LoginScreen({onLogin,invitePending}){
     <div style={{minHeight:"100vh",background:"#0b0b0a",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
       <div style={{background:"white",borderRadius:24,padding:"36px 28px",width:"100%",maxWidth:360,textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
         <img src={LOGO_SRC_DARK} alt="RateMates" style={{width:160,height:160,objectFit:"contain",margin:"0 auto 4px",display:"block"}}/>
-        <div style={{fontSize:12,color:"#8a847c",marginBottom:invitePending?14:24}}>Gemeinsam bewerten in Gruppen</div>
-        {invitePending&&<div style={{background:"#efe9fb",border:"1px solid #d9ccf5",borderRadius:12,padding:"10px 14px",marginBottom:16,fontSize:12,color:"#5b3fa0"}}>🎉 Du wurdest in eine Gruppe eingeladen! Melde dich an oder registriere dich — danach kommst du automatisch hinein.</div>}
+        <div style={{fontSize:12,color:"#8a847c",marginBottom:invitePending?14:24}}>Gemeinsam bewerten mit Freunden</div>
+        {invitePending&&<div style={{background:"#efe9fb",border:"1px solid #d9ccf5",borderRadius:12,padding:"10px 14px",marginBottom:16,fontSize:12,color:"#5b3fa0"}}>🎉 Du wurdest von einem Freund eingeladen! Registriere dich oder melde dich an, danach seid ihr direkt befreundet.</div>}
         <div style={{display:"flex",gap:6,background:"#efedea",borderRadius:12,padding:4,marginBottom:20}}>
           {[["login","Anmelden"],["register","Registrieren"]].map(([id,lbl])=>(
             <button key={id} onClick={()=>{setTab(id);setError("");setInfo("");setForgot(false);}}
@@ -131,7 +131,7 @@ export function LoginScreen({onLogin,invitePending}){
               style={{width:"100%",padding:14,borderRadius:12,background:busy?"#999":"#fab600",color:"#141414",fontSize:15,fontWeight:700,border:"none",cursor:busy?"wait":"pointer",fontFamily:"'Space Grotesk',sans-serif"}}>
               {busy?"Bitte warten…":"Link senden"}
             </button>
-            <div style={{fontSize:11.5,color:"#8a847c",marginTop:14,lineHeight:1.45}}>Keine E-Mail-Adresse hinterlegt? Dann kann dir der Admin deiner Gruppe ein neues Passwort geben.</div>
+            <div style={{fontSize:11.5,color:"#8a847c",marginTop:14,lineHeight:1.45}}>Keine E-Mail-Adresse hinterlegt? Dann kann dir der RateMates-Admin ein neues Passwort geben.</div>
             <button onClick={()=>{setForgot(false);setError("");setInfo("");}} style={linkBtn}>Zurück zur Anmeldung</button>
           </>
         ):(

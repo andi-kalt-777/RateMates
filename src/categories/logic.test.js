@@ -7,7 +7,7 @@ vi.mock("../firebase.js", () => ({
   auth: {},
 }));
 
-const { DEFINITIONS, DEFINITION_BY_ID, customDefinition } = await import("./index.js");
+const { DEFINITIONS, DEFINITION_BY_ID } = await import("./index.js");
 const L = await import("./logic.js");
 const { stamped, dupKey, normalizeRest } = await import("../lib/ratings.js");
 
@@ -142,11 +142,11 @@ describe("Lesen: Feld 1, Auswahl, Untertitel, Filter, Duplikate", () => {
 
 describe("Formulare", () => {
   it("Pflichtfelder wie bisher", () => {
-    const r = DEFINITION_BY_ID.restaurant, b = DEFINITION_BY_ID.beer, c = customDefinition({ id: "x", name: "X" });
+    const r = DEFINITION_BY_ID.restaurant, b = DEFINITION_BY_ID.beer;
     expect(L.validate(r, L.emptyForm(r))).toEqual({ name: "Bitte Name eingeben", field1: "Bitte Stadt eingeben", types: "Bitte Küche auswählen" });
     expect(L.validate(DEFINITION_BY_ID.whisky, L.emptyForm(DEFINITION_BY_ID.whisky))).toEqual({ name: "Bitte Name eingeben", field1: "Bitte Destillerie eingeben", types: "Bitte Typ auswählen" });
     expect(L.validate(b, L.emptyForm(b))).toEqual({ name: "Bitte Name eingeben", types: "Bitte Genre auswählen" });
-    expect(L.validate(c, { ...L.emptyForm(c), name: "A" })).toEqual({});
+    expect(L.validate(r, { ...L.emptyForm(r), name: "A", field1: "Köln", types: ["Thai"] })).toEqual({});
   });
   it("Bearbeiten übernimmt Stammdaten und eigene Wertung", () => {
     const def = DEFINITION_BY_ID.restaurant;

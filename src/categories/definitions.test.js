@@ -3,7 +3,7 @@ import { before, kindOf, asOldConfig } from "./__fixtures__/alt.js";
 
 vi.mock("../firebase.js", () => ({ firebase: {}, db: {}, auth: {} }));
 
-const { DEFINITIONS, DEFINITION_BY_ID, CATEGORY_DEFS, CATEGORY_GROUPS, customDefinition } = await import("./index.js");
+const { DEFINITIONS, DEFINITION_BY_ID, CATEGORY_DEFS, CATEGORY_GROUPS } = await import("./index.js");
 
 // Film und Serie hatten kein starsLabel; die Ansicht nahm dann "⭐ Gesamtwertung"
 const effective = (cfg) => ({ ...cfg, starsLabel: cfg.starsLabel || "⭐ Gesamtwertung" });
@@ -42,18 +42,5 @@ describe("Definitionen sind vollständig", () => {
         expect(d.texts[k], d.id + "." + k).toBeTruthy();
       }
     }
-  });
-
-  it("gruppeneigene Kategorien bleiben wie bisher", () => {
-    const d = customDefinition({ id: "pizza", name: "Pizzerien", icon: "🍕", field1Label: "Stadt", crit1Label: "Teig" });
-    expect(d.id).toBe("c:pizza");
-    expect(asOldConfig(d)).toMatchObject({
-      fbBase: "custom_pizza", fbSugg: "custom_pizza_sugg", label: "Pizzerien", icon: "🍕",
-      field1Label: "Stadt", field1Placeholder: "z.B. Stadt", field1Key: "field1", genreOptions: null,
-      crit1Label: "◆ Teig", crit1Short: "Teig", crit2Short: "Preis-Leistung", typeFilterLabel: "",
-    });
-    const plain = customDefinition({ id: "x", name: "X" });
-    expect(plain.icon).toBe("⭐");
-    expect(plain.criteria.map((c) => c.short)).toEqual(["Qualität", "Preis-Leistung"]);
   });
 });

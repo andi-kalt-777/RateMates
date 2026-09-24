@@ -25,14 +25,6 @@ export function Slider({label,value,min,max,onChange,color,display,t}){
 export function Stars({value,t}){
   return(<div style={{display:"flex",gap:2,flexWrap:"wrap"}}>{[...Array(10)].map((_,i)=><span key={i} style={{fontSize:14,color:i<Math.round(value)?"#e8a020":t.starEmpty}}>★</span>)}</div>);
 }
-export function Badge({value,max=10,color}){
-  const d=typeof value==="number"&&!Number.isInteger(value)?value.toFixed(1):value;
-  return <span style={{display:"inline-block",padding:"2px 8px",borderRadius:12,background:`${color}22`,color,fontWeight:700,fontSize:12,fontFamily:"'Space Grotesk',sans-serif"}}>{d}/{max}</span>;
-}
-export function Toast({msg,color,textColor}){
-  if(!msg)return null;
-  return <div style={{position:"fixed",bottom:96,left:"50%",transform:"translateX(-50%)",background:color,color:textColor,padding:"10px 20px",borderRadius:20,fontSize:13,fontWeight:600,zIndex:400,boxShadow:"0 4px 16px rgba(0,0,0,0.2)",whiteSpace:"nowrap"}}>{msg}</div>;
-}
 export function TypeChips({value,onChange,options,chipOn,chipOnColor,t}){
   return(
     <>
@@ -44,34 +36,6 @@ export function TypeChips({value,onChange,options,chipOn,chipOnColor,t}){
             style={{padding:"7px 14px",borderRadius:20,fontSize:13,cursor:disabled?"not-allowed":"pointer",border:`1.5px solid ${sel?chipOn:t.chipBorder}`,background:sel?chipOn:t.chipBg,color:sel?chipOnColor:disabled?"#ccc":t.chipColor,opacity:disabled?0.4:1,transition:"all 0.15s"}}>{c}</button>);
         })}
       </div>
-    </>
-  );
-}
-export function FilterBar({filter,setFilter,col1,col2,col1Label,col2Label,extra=[],filterOn,filterOnColor,t}){
-  const hasActive=Object.values(filter).some(Boolean);
-  const dropdowns=[["k1",col1Label||"Filter 1",col1]];
-  if(col2&&col2.length>0)dropdowns.push(["k2",col2Label||"Filter 2",col2]);
-  dropdowns.push(...extra);
-  return(
-    <>
-      <div style={{position:"relative",marginBottom:12}}>
-        <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:16,pointerEvents:"none"}}>🔍</span>
-        <input value={filter.search} onChange={e=>setFilter(p=>({...p,search:e.target.value}))} placeholder="Suchen…"
-          style={{width:"100%",padding:"11px 14px 11px 40px",borderRadius:12,fontSize:14,border:`1.5px solid ${filter.search?filterOn:t.inputBorder}`,background:t.inputBg,outline:"none",color:t.inputColor}}/>
-        {filter.search&&<button onClick={()=>setFilter(p=>({...p,search:""}))} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",fontSize:16,cursor:"pointer",color:t.sub}}>×</button>}
-      </div>
-      {dropdowns.some(([,,opts])=>opts.length>0)&&(
-        <div className="hscroll" style={{display:"flex",gap:8,marginBottom:12,overflowX:"auto",paddingBottom:4}}>
-          {dropdowns.map(([key,ph,opts])=>(
-            <select key={key} value={filter[key]||""} onChange={e=>setFilter(p=>({...p,[key]:e.target.value}))}
-              style={{padding:"7px 10px",borderRadius:20,border:`1px solid ${filter[key]?filterOn:t.filterBorder}`,background:filter[key]?filterOn:t.filterBg,color:filter[key]?filterOnColor:t.filterColor,fontSize:12,cursor:"pointer",outline:"none",flexShrink:0}}>
-              <option value="">{ph}</option>
-              {opts.map(o=><option key={o}>{o}</option>)}
-            </select>
-          ))}
-        </div>
-      )}
-      {hasActive&&<div style={{marginBottom:12}}><button onClick={()=>setFilter(Object.fromEntries(Object.keys(filter).map(k=>[k,""])))} style={{fontSize:11,color:t.restAccent,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>Filter zurücksetzen</button></div>}
     </>
   );
 }

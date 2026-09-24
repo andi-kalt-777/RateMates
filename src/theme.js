@@ -21,7 +21,7 @@ export const LIGHT={
   secondaryBtn:"#eceffb",secondaryBtnColor:"#3a3f5c",
   suggCard:"#fbfcff",suggBorder:"#dfe4f6",restSuggAccent:"#5b68d8",whiskySuggAccent:"#5b68d8",suggBadgeBg:"#edf0fc",
   modeSwitchBg:"rgba(255,255,255,0.14)",modeSwitchBorder:"rgba(255,255,255,0.26)",
-  danger:"#d0453c",adminBadge:"#6c7bff",adminBadgeColor:"#ffffff",memberBadge:"#eceffb",memberBadgeColor:"#4a4f68",
+  danger:"#d0453c",badge:"#d0453c",onBadge:"#ffffff",adminBadge:"#6c7bff",adminBadgeColor:"#ffffff",memberBadge:"#eceffb",memberBadgeColor:"#4a4f68",
   // Neue Aufmachung (Leiste unten, Dashboard, Seitenköpfe)
   accent:"#6c7bff",onAccent:"#ffffff",link:"#4f5bd5",tile:"#eef1fb",
   tabBg:"#ffffff",tabActive:"#4f5bd5",tabInactive:"#7c829c",segBg:"#e6eaf8",segOn:"#ffffff",segShadow:"0 1px 4px rgba(35,38,58,0.12)",
@@ -49,7 +49,7 @@ export const DARK={
   secondaryBtn:"#2a2721",secondaryBtnColor:"#e8dfc8",
   suggCard:"#151310",suggBorder:"#2c261c",restSuggAccent:"#d8b04a",whiskySuggAccent:"#d8b04a",suggBadgeBg:"#201d16",
   modeSwitchBg:"rgba(255,255,255,0.07)",modeSwitchBorder:"rgba(255,255,255,0.14)",
-  danger:"#e05048",adminBadge:"#fab600",adminBadgeColor:"#141414",memberBadge:"#2a2721",memberBadgeColor:"#a89f8f",
+  danger:"#e05048",badge:"#e05048",onBadge:"#ffffff",adminBadge:"#fab600",adminBadgeColor:"#141414",memberBadge:"#2a2721",memberBadgeColor:"#a89f8f",
   // Neue Aufmachung (Leiste unten, Dashboard, Seitenköpfe)
   accent:"#fab600",onAccent:"#141414",link:"#fab600",tile:"#221f1a",
   tabBg:"#121110",tabActive:"#fab600",tabInactive:"#8a8375",segBg:"#221f1a",segOn:"#2f2a20",segShadow:"none",

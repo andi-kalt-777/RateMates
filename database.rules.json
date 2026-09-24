@@ -44,6 +44,48 @@
       ".write": "auth != null"
     },
 
+    "friends": {
+      "$a": {
+        ".read": "auth != null && root.child('uids').child(auth.uid).val() === $a",
+        ".write": "auth != null && root.child('uids').child(auth.uid).val() === $a && !newData.exists()",
+        "$b": {
+          ".write": "auth != null && $a !== $b && ((!newData.exists() && (root.child('uids').child(auth.uid).val() === $a || root.child('uids').child(auth.uid).val() === $b)) || (!data.exists() && newData.child('since').val() === now && ((root.child('uids').child(auth.uid).val() === $a && ((newData.child('via').val() === 'request' && root.child('friend_requests').child($a).child($b).exists()) || (newData.child('via').val() !== 'request' && root.child('invites').child(newData.child('via').val()).child('from').val() === $b && root.child('invites').child(newData.child('via').val()).child('createdAt').val() > now - 1209600000 && root.child('users').child($b).child('uid').exists()))) || (root.child('uids').child(auth.uid).val() === $b && ((newData.child('via').val() === 'request' && root.child('friend_requests').child($b).child($a).exists()) || (newData.child('via').val() !== 'request' && root.child('invites').child(newData.child('via').val()).child('from').val() === $a && root.child('invites').child(newData.child('via').val()).child('createdAt').val() > now - 1209600000 && root.child('users').child($a).child('uid').exists()))))))",
+          ".validate": "newData.child('since').isNumber() && newData.child('via').isString()"
+        }
+      }
+    },
+
+    "friend_requests": {
+      "$to": {
+        ".read": "auth != null && root.child('uids').child(auth.uid).val() === $to",
+        ".write": "auth != null && root.child('uids').child(auth.uid).val() === $to && !newData.exists()",
+        "$from": {
+          ".read": "auth != null && root.child('uids').child(auth.uid).val() === $from",
+          ".write": "auth != null && ((root.child('uids').child(auth.uid).val() === $from && (!newData.exists() || ($from !== $to && !data.exists() && root.child('users').child($to).exists() && !root.child('friends').child($to).child($from).exists()))) || (root.child('uids').child(auth.uid).val() === $to && !newData.exists()))",
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+
+    "friend_requests_sent": {
+      "$from": {
+        ".read": "auth != null && root.child('uids').child(auth.uid).val() === $from",
+        ".write": "auth != null && root.child('uids').child(auth.uid).val() === $from && !newData.exists()",
+        "$to": {
+          ".write": "auth != null && ((root.child('uids').child(auth.uid).val() === $from && (!newData.exists() || ($from !== $to && root.child('users').child($to).exists()))) || (root.child('uids').child(auth.uid).val() === $to && !newData.exists()))",
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+
+    "invites": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && newData.child('from').val() === root.child('uids').child(auth.uid).val() && newData.child('createdAt').val() === now) || (data.exists() && !newData.exists()))",
+        ".validate": "$code.length === 20 && newData.child('from').isString() && newData.child('createdAt').isNumber()"
+      }
+    },
+
     "restaurants": {
       ".read": "auth != null",
       "$id": {
@@ -222,15 +264,6 @@
         "ratings": { "$user": { ".write": "auth != null && root.child('users').child($user).child('uid').val() === auth.uid" } }
       }
     },
-    "matcha_suggestions": { ".read": "auth != null", ".write": "auth != null" },
-
-    "$custom": {
-      ".read": "auth != null && $custom.matches(/^custom_[A-Za-z0-9_-]+$/)",
-      "$id": {
-        ".write": "auth != null && $custom.matches(/^custom_[A-Za-z0-9_-]+$/) && ($custom.endsWith('_sugg') || !data.exists() || !newData.exists())",
-        "$field": { ".write": "auth != null && $custom.matches(/^custom_[A-Za-z0-9_-]+$/) && $field !== 'ratings'" },
-        "ratings": { "$user": { ".write": "auth != null && $custom.matches(/^custom_[A-Za-z0-9_-]+$/) && root.child('users').child($user).child('uid').val() === auth.uid" } }
-      }
-    }
+    "matcha_suggestions": { ".read": "auth != null", ".write": "auth != null" }
   }
 }

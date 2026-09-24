@@ -18,7 +18,7 @@ was später im Store im Weg steht.
 | Build-Werkzeug | Vite + React, kein Babel mehr im Browser | entschieden |
 | Mac für iOS-Builds | vorhanden, iOS-Builds laufen lokal über Xcode | entschieden |
 | Veröffentlichung als Firma oder Privatperson? | Tendenz: kleine Selbständigkeit rund um die App | offen, Entscheidung vor Phase 4 |
-| Dürfen Fremde eigene Gruppen gründen? | vorerst nicht; später evtl. als Pro-Funktion gegen Bezahlung | offen, Entscheidung vor Phase 3 |
+| Gruppen oder Freunde? | Freunde statt Gruppen: gegenseitige Freundschaft per Einladungslink oder bestätigter Anfrage, jeder wählt seine Kategorien selbst | entschieden 24.09.2026 |
 
 ### Folgen dieser Entscheidungen
 
@@ -31,7 +31,7 @@ was später im Store im Weg steht.
   Entwicklerkonto und ist ein Grund mehr für eine saubere Gewerbe-Entscheidung.
   Technisch: Das Nutzermodell bekommt ab Phase 0 ein Feld für die Berechtigungsstufe
   (z. B. `plan: "free" | "pro"`), damit Funktionen später sauber freigeschaltet
-  werden können. Gruppen-Gründung bleibt bis dahin auf bekannte Nutzer beschränkt.
+  werden können.
 - **Kein Cloud-Build nötig:** Der Kostenpunkt „Cloud-Builds für iOS" entfällt.
 
 ## Leitplanken für die laufende Arbeit
@@ -100,15 +100,19 @@ Ziel: Die App fühlt sich auf dem Handy wie eine App an.
       Variante A. Leiste unten mit fünf Reitern (Start, Bewertungen,
       Vorschläge, Gruppen, Kategorien), Start ist ein Dashboard (Bilanz,
       letzte eigene Bewertung, Neues von Freunden, meistbewertete
-      Kategorien). Die Leiste bleibt auch in geöffneten Gruppen stehen,
-      dort oben Umschalter Bewertungen/Vorschläge. Wertungen tragen seit
+      Kategorien). Wertungen tragen seit
       24.09.2026 ein Zeitfeld `ratedAt`; ältere haben keins und zählen nur
       zur Bilanz.
+- [x] Freunde statt Gruppen (24.09.2026): Reiter „Freunde" statt „Gruppen",
+      Einladungslink (14 Tage, einmal verwendbar) oder Anfrage per Name, eigene
+      Kategorien im Reiter Kategorien, Willkommensbildschirm beim ersten Start.
+      Bearbeiten, Wertung abgeben und Löschen im Detailblatt der Übersichten.
+      Bestehende Gruppen einmalig in Freundschaften umgezogen.
 - [ ] PWA: Manifest, Service Worker, installierbar, lädt offline
 - [ ] Capacitor-Projekte für iOS und Android anlegen
 - [ ] App-Icons, Startbildschirm, Statusleiste, Safe Areas
 - [ ] Android-Zurück-Taste und Tastaturverhalten
-- [ ] Push-Nachrichten (z. B. neue Bewertung in der Gruppe)
+- [ ] Push-Nachrichten (z. B. neue Bewertung eines Freundes, Freundschaftsanfrage)
 - [ ] Einladungslinks, die direkt die App öffnen (Deep Links)
 - [ ] Anmeldung mit Google und Apple, zusätzlich zu Name/Passwort. Beides
       zusammen: Apple verlangt „Mit Apple anmelden", sobald eine iOS-App einen
@@ -128,6 +132,8 @@ Ziel: Alles, was die Stores verlangen und was Fremde brauchen.
 - [ ] Datenschutzerklärung, Impressum, Nutzungsbedingungen
 - [ ] Melden und Blockieren von Inhalten und Nutzern (Pflicht bei Apple für
       nutzererstellte Inhalte)
+- [ ] Lesesperre: Bewertungen nur für Freunde lesbar (heute filtert nur die
+      Anzeige)
 - [ ] Altersfreigabe entscheiden: Alkoholkategorien führen voraussichtlich zu
       17+/18+
 - [ ] Onboarding für neue Nutzer ohne Vorwissen

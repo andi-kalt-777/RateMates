@@ -57,12 +57,10 @@ try {
   ).rules;
   const paths = DEFINITIONS.flatMap((d) => [d.paths.items, d.paths.suggestions]);
   const unruled = paths.filter((p) => !(p in rules));
-  // Gruppeneigene Kategorien liegen unter custom_<id>; dafür steht ein $-Platzhalter
-  if (!Object.keys(rules).some((k) => k.startsWith("$"))) unruled.push("custom_* ($-Platzhalter)");
   if (unruled.length) {
     fail("Firebase-Pfad ohne Datenbankregel: " + unruled.join(", "));
   } else {
-    ok(`Alle ${paths.length} Kategorie-Pfade und custom_* in database.rules.json abgedeckt`);
+    ok(`Alle ${paths.length} Kategorie-Pfade in database.rules.json abgedeckt`);
   }
 } catch (e) {
   fail("database.rules.json fehlt oder ist kein gültiges JSON: " + e.message);

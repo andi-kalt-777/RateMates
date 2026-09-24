@@ -2,9 +2,11 @@
 
 Private Bewertungs-App für Freundesgruppen — „von Freunden für Freunde".
 
-Gruppen bewerten gemeinsam Restaurants, Cafés, Bars, Eisdielen, Lieferservices,
+Freunde bewerten gemeinsam Restaurants, Cafés, Bars, Eisdielen, Lieferservices,
 Filme, Serien, Bücher, Hörbücher, Spirituosen sowie Kaffee, Bier, Wein, Tee und
-Matcha. Vorschläge sammeln, was beim nächsten Mal drankommt.
+Matcha. Vorschläge sammeln, was beim nächsten Mal drankommt. Jeder wählt seine
+Kategorien selbst und sieht darin die Wertungen seiner Freunde; Freundschaften
+entstehen per Einladungslink oder bestätigter Anfrage.
 
 **Live:** https://andi-kalt-777.github.io/RateMates/
 

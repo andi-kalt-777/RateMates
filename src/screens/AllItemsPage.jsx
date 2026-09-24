@@ -5,18 +5,18 @@ import {average,subtitle,filterMeta,cityOf,cityKey,cityOptions} from "../categor
 import {useCategoryData} from "../lib/useCategoryData.js";
 import {UserMenu} from "../components/UserMenu.jsx";
 import {Page,PageHeader,PlusButton,Chips} from "../components/PageHeader.jsx";
-import {AddFlow,GlobalAddSheet,GlobalDetailSheet} from "../components/GlobalSheets.jsx";
+import {AddFlow,GlobalAddSheet,EntrySheet} from "../components/GlobalSheets.jsx";
 
 // Gewählte Stadt gilt für Bewertungen und Vorschläge und bleibt auf diesem Gerät gespeichert
 const CITY_KEY="rm_city";
 const loadCity=()=>{try{return localStorage.getItem(CITY_KEY)||"";}catch{return "";}};
 const saveCity=c=>{try{if(c)localStorage.setItem(CITY_KEY,c);else localStorage.removeItem(CITY_KEY);}catch{}};
 
-// BEWERTUNGEN bzw. VORSCHLÄGE: alles aus allen eigenen Gruppen
-export function AllItemsPage({type,user,groups,dark,setDark,t,onLogout}){
+// BEWERTUNGEN bzw. VORSCHLÄGE: von dir und deinen Freunden in deinen Kategorien
+export function AllItemsPage({type,user,friends,categories,dark,setDark,t,onLogout}){
   const isRatings=type==="ratings";
-  const data=useCategoryData({groups,user,items:isRatings,suggestions:!isRatings});
-  const {friends,activeDefs}=data;
+  const data=useCategoryData({user,friends,categories,items:isRatings,suggestions:!isRatings});
+  const {circle,activeDefs}=data;
   const [catF,setCatF]=useState("");
   const [showAdd,setShowAdd]=useState(false);
   const [convert,setConvert]=useState(null);
@@ -36,12 +36,12 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onLogout}){
   let items=[];
   if(isRatings){
     for(const {def,item} of data.items){
-      const vis=restrictToMembers(item,friends);
+      const vis=restrictToMembers(item,circle);
       const avg=average(def,vis);
       if(avg.count>0)items.push({cat:def,item:vis,avg});
     }
   }else{
-    for(const {def,item} of data.suggestions)if(item.author&&friends.includes(item.author))items.push({cat:def,item});
+    for(const {def,item} of data.suggestions)if(item.author&&circle.includes(item.author))items.push({cat:def,item});
   }
   // Städte aus allen Orts-Kategorien; eine gespeicherte Stadt ohne Einträge bleibt wählbar
   const cities=cityOptions(items);
@@ -80,7 +80,7 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onLogout}){
   return(
     <Page t={t}>
       <PageHeader t={t} title={isRatings?"Bewertungen":"Vorschläge"}
-        subtitle={isRatings?"Von dir und deinen Freunden · alle Gruppen":"Ideen für das nächste Mal"}
+        subtitle={isRatings?"Von dir und deinen Freunden":"Ideen für das nächste Mal"}
         right={<>
           <PlusButton t={t} label={isRatings?"Neu bewerten":"Neuer Vorschlag"} onClick={()=>setShowAdd(true)}/>
           <UserMenu user={user} dark={dark} setDark={setDark} t={t} onLogout={onLogout}/>
@@ -155,7 +155,7 @@ export function AllItemsPage({type,user,groups,dark,setDark,t,onLogout}){
       ))}
       {showAdd&&<AddFlow defs={activeDefs} user={user} isRatings={isRatings} dark={dark} t={t} onClose={()=>setShowAdd(false)} onSaved={saved}/>}
       {convert&&<GlobalAddSheet def={convert.cat} fromSuggestion={convert.item} user={user} isRatings dark={dark} t={t} onClose={()=>setConvert(null)} onSaved={saved}/>}
-      {detail&&<GlobalDetailSheet entry={detail} isRatings={isRatings} t={t} onClose={()=>setDetail(null)}/>}
+      {detail&&<EntrySheet key={detail.cat.id+detail.item.id} entry={detail} isRatings={isRatings} user={user} dark={dark} t={t} onClose={()=>setDetail(null)} onChanged={data.reload}/>}
     </Page>
   );
 }

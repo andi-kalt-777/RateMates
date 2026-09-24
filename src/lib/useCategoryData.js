@@ -1,15 +1,14 @@
 import {useState,useEffect,useCallback} from "react";
 import {db} from "../firebase.js";
-import {DEFINITIONS} from "../categories/index.js";
 import {normalizeItem} from "../categories/logic.js";
+import {activeDefinitions} from "./friends.js";
 
-// Lädt Bewertungen und/oder Vorschläge aller Standard-Kategorien, die in den eigenen
-// Gruppen aktiv sind. Einträge kommen als {def, item}, Bewertungen normalisiert
-// (Altformat der Restaurants), aber noch nicht auf Freunde eingeschränkt.
-export function useCategoryData({groups,user,items=true,suggestions=true}){
-  const my=groups.filter(g=>g.members&&g.members[user]);
-  const friends=[...new Set(my.flatMap(g=>Object.keys(g.members||{})))];
-  const activeDefs=DEFINITIONS.filter(d=>my.some(g=>g.categories?.[d.id]));
+// Lädt Bewertungen und/oder Vorschläge aller eigenen Kategorien. Einträge kommen als
+// {def, item}, Bewertungen normalisiert (Altformat der Restaurants), aber noch nicht
+// eingeschränkt. circle = du und deine Freunde; damit filtern die Ansichten.
+export function useCategoryData({user,friends,categories,items=true,suggestions=true}){
+  const circle=[user,...friends];
+  const activeDefs=activeDefinitions(categories);
   const activeKey=activeDefs.map(d=>d.id).join(",");
   const [state,setState]=useState({loaded:false,items:[],suggestions:[]});
   const [reloadKey,setReloadKey]=useState(0);
@@ -28,5 +27,5 @@ export function useCategoryData({groups,user,items=true,suggestions=true}){
     const tm=setTimeout(()=>{if(!cancelled)setState(p=>({...p,loaded:true}));},8000);
     return()=>{cancelled=true;clearTimeout(tm);};
   },[activeKey,reloadKey,items,suggestions]); // activeDefs ändert sich nur mit activeKey
-  return{...state,reload,friends,activeDefs,myGroups:my};
+  return{...state,reload,circle,activeDefs};
 }

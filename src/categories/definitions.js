@@ -5,7 +5,7 @@
 // paths.suggestions in database.rules.json (danach firebase deploy --only database).
 //
 // Aufbau eines Eintrags:
-//   id, icon, label (Mehrzahl), title (Kopfzeile in der Gruppe), group (Obergruppe)
+//   id, icon, label (Mehrzahl), title (Überschrift), group (Obergruppe)
 //   paths      Firebase-Pfade für Bewertungen und Vorschläge
 //   field1     Freitextfeld (Stadt, Destillerie, Plattform …): key im Datensatz; place = ist ein Ort
 //              (Stadtfilter in den Übersichten); legacyKey =
@@ -280,17 +280,3 @@ export const DEFINITIONS=[
   }),
 ];
 
-// Gruppeneigene Kategorien (vom Admin angelegt, liegen unter custom_<id>)
-export function customDefinition(cat){
-  return standard({
-    id:"c:"+cat.id,icon:cat.icon||"⭐",label:cat.name,title:cat.name,group:null,custom:true,
-    paths:{items:"custom_"+cat.id,suggestions:"custom_"+cat.id+"_sugg"},
-    field1:{label:cat.field1Label||"Herkunft / Marke",placeholder:"z.B. "+(cat.field1Label||"Marke"),filterLabel:"Alle"},
-    types:{options:null,required:false,filterLabel:""},
-    crit1:{label:"◆ "+(cat.crit1Label||"Qualität"),short:cat.crit1Label||"Qualität"},
-    crit2:{label:"◆ "+(cat.crit2Label||"Preis-Leistung"),short:cat.crit2Label||"Preis-Leistung"},
-    texts:{listLabel:cat.name,addTitle:cat.name+" hinzufügen",addSuggTitle:cat.name+" Vorschlag",suggListTitle:cat.name+" Vorschläge",
-      suggHint:"💡 Noch nicht probiert — als Idee für den nächsten Abend.",notYet:"Noch nicht probiert.",
-      emptyText:"Noch keine Einträge",namePlaceholder:"Name",saveToast:"✅ Gespeichert!"},
-  });
-}

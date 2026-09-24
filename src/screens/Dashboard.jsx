@@ -2,23 +2,22 @@ import {useState} from "react";
 import EMBLEM from "../assets/emblem-hell.png";
 import EMBLEM_DARK from "../assets/emblem-gold.png";
 import {restrictToMembers} from "../lib/ratings.js";
-import {average} from "../categories/logic.js";
 import {useCategoryData} from "../lib/useCategoryData.js";
 import {dashboardStats,relativeTime} from "../lib/activity.js";
 import {initialsOf,UserMenu} from "../components/UserMenu.jsx";
 import {Page} from "../components/PageHeader.jsx";
-import {AddFlow,GlobalDetailSheet} from "../components/GlobalSheets.jsx";
+import {AddFlow,EntrySheet} from "../components/GlobalSheets.jsx";
 
 // START: Bilanz, letzte eigene Bewertung, Neues von Freunden, meistbewertete Kategorien
-export function Dashboard({user,groups,dark,setDark,t,onTab,onLogout}){
-  const data=useCategoryData({groups,user});
-  const {friends,activeDefs,myGroups}=data;
+export function Dashboard({user,friends,categories,dark,setDark,t,onTab,onLogout}){
+  const data=useCategoryData({user,friends,categories});
+  const {circle,activeDefs}=data;
   const [showAdd,setShowAdd]=useState(false);
   const [detail,setDetail]=useState(null);
-  // Nur was die eigenen Gruppen sehen: Wertungen von dir und deinen Freunden
-  const ratingEntries=data.items.map(({def,item})=>({def,item:restrictToMembers(item,friends)}));
-  const s=dashboardStats({ratingEntries,suggEntries:data.suggestions,user,friends});
-  const open=r=>setDetail({cat:r.def,item:r.item,avg:average(r.def,r.item)});
+  // Nur Wertungen von dir und deinen Freunden
+  const ratingEntries=data.items.map(({def,item})=>({def,item:restrictToMembers(item,circle)}));
+  const s=dashboardStats({ratingEntries,suggEntries:data.suggestions,user,friends:circle});
+  const open=r=>setDetail({cat:r.def,item:r.item});
 
   const h2={margin:0,fontFamily:"'Space Grotesk',sans-serif",fontSize:16,fontWeight:700,color:t.title};
   const card={background:t.card,border:`1px solid ${t.cardBorder}`,borderRadius:16,boxShadow:`0 2px 12px ${t.cardShadow}`};
@@ -68,7 +67,7 @@ export function Dashboard({user,groups,dark,setDark,t,onTab,onLogout}){
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:8}}>
           {tile(s.categoryCount,s.categoryCount===1?"Kategorie":"Kategorien","ratings")}
-          {tile(myGroups.length,myGroups.length===1?"Gruppe":"Gruppen","groups")}
+          {tile(friends.length,friends.length===1?"Freund":"Freunde","friends")}
           {tile(s.openSuggestions,s.openSuggestions===1?"Vorschlag":"Vorschläge","sugg")}
         </div>
       </section>
@@ -91,7 +90,8 @@ export function Dashboard({user,groups,dark,setDark,t,onTab,onLogout}){
         </div>
         <div style={{...card,padding:"2px 16px"}}>
           {!data.loaded?emptyText("Lade…"):s.friendsLatest.length?s.friendsLatest.map((r,i)=>row(r,i,true))
-            :emptyText("Sobald deine Freunde etwas bewerten, siehst du es hier.")}
+            :friends.length?emptyText("Sobald deine Freunde etwas bewerten, siehst du es hier.")
+            :<div style={{fontSize:13,color:t.sub,padding:"14px 0",lineHeight:1.5}}>Noch keine Freunde. <button style={{...link,padding:0}} onClick={()=>onTab("friends")}>Lade jemanden ein</button> und bewertet gemeinsam.</div>}
         </div>
       </section>
 
@@ -114,7 +114,7 @@ export function Dashboard({user,groups,dark,setDark,t,onTab,onLogout}){
       )}
 
       {showAdd&&<AddFlow defs={activeDefs} user={user} isRatings dark={dark} t={t} onClose={()=>setShowAdd(false)} onSaved={()=>{setShowAdd(false);data.reload();}}/>}
-      {detail&&<GlobalDetailSheet entry={detail} isRatings t={t} onClose={()=>setDetail(null)}/>}
+      {detail&&<EntrySheet key={detail.cat.id+detail.item.id} entry={detail} isRatings user={user} dark={dark} t={t} onClose={()=>setDetail(null)} onChanged={data.reload}/>}
     </Page>
   );
 }

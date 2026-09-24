@@ -1,7 +1,8 @@
 import {useState,useEffect} from "react";
 import {firebase,db,auth} from "../firebase.js";
 import {authEmail,nameKey,hasRealEmail,validEmail,readOnce,loginError,NO_ACCOUNT_CODES,authErrorMsg} from "../lib/auth.js";
-import {DEFINITIONS,customDefinition} from "../categories/index.js";
+import {DEFINITIONS} from "../categories/index.js";
+import {removeFriendUpdate,declineRequestUpdate,cancelRequestUpdate} from "../lib/friends.js";
 import {SwipeableSheet} from "./ui.jsx";
 
 // Passwort ändern und Konto löschen (für alle Benutzer)
@@ -59,7 +60,7 @@ export function AccountSheet({user,onClose,t}){
     setBusy(false);
   };
   // Konto löschen (Pflicht für den App Store): Bewertungen weg, Vorschläge ohne Namen,
-  // Gruppen verlassen, Profil + Verknüpfungen + Firebase-Konto löschen.
+  // Freundschaften und Anfragen beenden, Profil + Verknüpfungen + Firebase-Konto löschen.
   // Reihenfolge ist wichtig: Die Regeln prüfen bis zuletzt users/<Name>/uid und uids/<uid>.
   const deleteAccount=async()=>{
     if(!delPw){setDelMsg("Bitte dein Passwort eingeben.");return;}
@@ -67,13 +68,7 @@ export function AccountSheet({user,onClose,t}){
     setBusy(true);setDelMsg("");
     try{
       const cu=await reauth(delPw,"Passwort ist falsch.");
-      const groups=Object.values((await readOnce("groups"))||{});
-      const mine=groups.filter(g=>g.members&&g.members[user]);
-      const blocked=mine.filter(g=>{const m=g.members;const admins=Object.keys(m).filter(k=>m[k]==="admin");return m[user]==="admin"&&admins.length===1&&Object.keys(m).length>1;});
-      if(blocked.length)throw loginError("Du bist alleiniger Admin in: "+blocked.map(g=>g.name).join(", ")+". Ernenne dort zuerst einen anderen Admin.");
-      const bases=DEFINITIONS.map(d=>[d.paths.items,d.paths.suggestions]);
-      groups.forEach(g=>Object.values(g.custom||{}).forEach(c=>{const p=customDefinition(c).paths;bases.push([p.items,p.suggestions]);}));
-      for(const [base,sugg] of bases){
+      for(const {paths:{items:base,suggestions:sugg}} of DEFINITIONS){
         const items=(await readOnce(base))||{};
         for(const [id,it] of Object.entries(items)){
           if(it.ratings&&it.ratings[user])await db.ref(base+"/"+id+"/ratings/"+user).remove();
@@ -84,10 +79,15 @@ export function AccountSheet({user,onClose,t}){
       }
       const reqs=(await readOnce("category_requests"))||{};
       for(const [k,r] of Object.entries(reqs)){if(r.users&&r.users[user])await db.ref("category_requests/"+k+"/users/"+user).remove().catch(()=>{});}
-      for(const g of mine){
-        if(Object.keys(g.members).length===1)await db.ref("groups/"+g.id).remove();
-        else await db.ref("groups/"+g.id+"/members/"+user).remove();
-      }
+      // Freundschaften und offene Anfragen auf beiden Seiten
+      const upd={};
+      for(const f of Object.keys((await readOnce("friends/"+user))||{}))Object.assign(upd,removeFriendUpdate(user,f));
+      for(const f of Object.keys((await readOnce("friend_requests/"+user))||{}))Object.assign(upd,declineRequestUpdate(user,f));
+      for(const f of Object.keys((await readOnce("friend_requests_sent/"+user))||{}))Object.assign(upd,cancelRequestUpdate(user,f));
+      if(Object.keys(upd).length)await db.ref().update(upd);
+      // Alte Gruppen (nicht mehr genutzt): Mitgliedschaft austragen
+      const groups=Object.values((await readOnce("groups"))||{});
+      for(const g of groups)if(g.members?.[user])await db.ref("groups/"+g.id+"/members/"+user).remove().catch(()=>{});
       await db.ref("users/"+user).remove();
       await db.ref("names/"+nameKey(user)).remove().catch(()=>{});
       await db.ref("uids/"+cu.uid).remove().catch(()=>{});
@@ -132,7 +132,7 @@ export function AccountSheet({user,onClose,t}){
       </div>
       <div style={{borderTop:`1px solid ${t.inputBorder}`,marginTop:26,paddingTop:18}}>
         <div style={{fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,fontSize:16,color:t.title}}>🗑️ Konto löschen</div>
-        <div style={{fontSize:12,color:t.sub,marginTop:2,marginBottom:12}}>Löscht dein Konto, deine Bewertungen und deine Gruppenmitgliedschaften endgültig. Deine Vorschläge bleiben ohne Namen erhalten.</div>
+        <div style={{fontSize:12,color:t.sub,marginTop:2,marginBottom:12}}>Löscht dein Konto, deine Bewertungen und deine Freundschaften endgültig. Deine Vorschläge bleiben ohne Namen erhalten.</div>
         <input type="password" value={delPw} onChange={e=>{setDelPw(e.target.value);setDelMsg("");}} placeholder="Passwort zur Bestätigung" style={inp}/>
         {delMsg&&<div style={{fontSize:12,color:t.danger,marginBottom:10}}>{delMsg}</div>}
         <button onClick={deleteAccount} disabled={busy}

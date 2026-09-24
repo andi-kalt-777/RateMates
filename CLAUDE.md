@@ -10,15 +10,18 @@ Antworte mit Andreas immer auf **Deutsch**.
   `firebase.js` (Zugang), `categories/` (Definitionen, Registry, Logik),
   `theme.js` (Farben), `lib/auth.js` (Anmelde-Helfer), `lib/ratings.js`
   (Duplikate, Mitgliederfilter, Altformat, `stamped`), `lib/activity.js`
-  (Dashboard-Zahlen, Zeitpunkt einer Wertung), `lib/useCategoryData.js` (lädt
-  Einträge aller aktiven Kategorien), `apps/CategoryApp.jsx` (eine Kategorie in
-  einer Gruppe), `screens/` (Dashboard, AllItemsPage für Bewertungen/Vorschläge,
-  GroupsOverview, CategoriesPage, LoginScreen), `components/` (TabBar,
-  PageHeader/Page/Chips, GlobalSheets, Menüs, `ui.jsx` mit Slider/Stars/
+  (Dashboard-Zahlen, Zeitpunkt einer Wertung), `lib/friends.js` (Freundschafts-
+  Logik ohne Firebase, auch fürs Umzugsskript), `lib/useFriends.js` (Freunde,
+  Anfragen, eigene Kategorien live + Aktionen), `lib/useCategoryData.js` (lädt
+  Einträge der eigenen Kategorien), `screens/` (Dashboard, AllItemsPage für
+  Bewertungen/Vorschläge, FriendsPage, CategoriesPage, WelcomeCategories für den
+  ersten Start, LoginScreen), `components/` (TabBar, PageHeader/Page/Chips,
+  GlobalSheets mit Neu/Bearbeiten/Detail `EntrySheet`, EntryViews mit
+  Detailblättern und Reglern, CategoryPicker, Menüs, `ui.jsx` mit Slider/Stars/
   SwipeableSheet …), Logos und Bildzeichen in `assets/`. Jede Datei exportiert
   ihre Funktionen benannt.
 - **Aufbau der Oberfläche:** Leiste unten (`TabBar`) mit Start, Bewertungen,
-  Vorschläge, Gruppen, Kategorien; der aktive Reiter liegt in `App.jsx` (`tab`).
+  Vorschläge, Freunde, Kategorien; der aktive Reiter liegt in `App.jsx` (`tab`).
   Seiten nutzen `Page` (Platz für die Leiste) und `PageHeader`. Farben der neuen
   Aufmachung stehen als eigene Tokens in `LIGHT`/`DARK` (`accent`, `link`, `tile`,
   `hero…`, `tab…`, `seg…`).
@@ -54,6 +57,17 @@ Antworte mit Andreas immer auf **Deutsch**.
   mit `auth.currentUser.email`. Ohne E-Mail setzt der Admin Passwörter mit
   `scripts/reset-password.ps1` zurück (README). Konto löschen steckt in
   `AccountSheet`; die Reihenfolge der Löschschritte ist durch die Regeln vorgegeben.
+- **Freunde statt Gruppen** (seit 24.09.2026): Freundschaften sind immer gegenseitig,
+  `friends/<Name>/<Freund> = {since, via}` steht auf beiden Seiten. Sie entstehen
+  nur durch eine angenommene Anfrage (`friend_requests/<An>/<Von>`, Spiegel in
+  `friend_requests_sent/<Von>/<An>`) oder einen Einladungslink
+  (`#friend=<Code>`, `invites/<Code> = {from, createdAt}`, 14 Tage, einmal
+  verwendbar). Die Regeln lassen das Anlegen nur mit Anfrage oder gültigem Code zu,
+  deshalb immer die Mehrpfad-Updates aus `lib/friends.js` benutzen. Eigene
+  Kategorien liegen in `users/<Name>/categories` (nur für den Besitzer lesbar); ohne
+  Kategorien zeigt die App `WelcomeCategories`. Die alten Daten unter `groups/`
+  werden nicht mehr gelesen und bleiben nur als Rückweg liegen (Umzug:
+  `scripts/migrate-friends.mjs`).
 
 ## Nach jeder Änderung
 
@@ -63,7 +77,7 @@ npm run check     # Strukturprüfung (Kategorien, Regeln, Versionen), ESLint, Te
 
 Tests (Vitest) liegen neben dem Code als `*.test.js` und decken die Rechenlogik
 ab: Durchschnitte, Duplikate, Mitgliederfilter, Altformat, Kategorie-Registry,
-Anmelde-Helfer. Firebase wird dort per `vi.mock` ersetzt. Wer Rechenlogik ändert,
+Anmelde-Helfer, Freundschaften und Einladungen. Firebase wird dort per `vi.mock` ersetzt. Wer Rechenlogik ändert,
 passt den Test mit an; `npm test` führt nur die Tests aus.
 
 ESLint findet vor allem nicht deklarierte Namen — die lässt der Build durch, sie
@@ -75,9 +89,7 @@ sich nur testen, wenn Andreas sich in der lokalen Vorschau selbst anmeldet.
 Jede Kategorie ist ein Eintrag in `src/categories/definitions.js` (Aufbau steht
 oben in der Datei). Alles andere wird daraus abgeleitet: Registry
 (`src/categories/index.js`), Rechen- und Speicherlogik (`src/categories/logic.js`),
-die gemeinsame Ansicht `src/apps/CategoryApp.jsx` für alle Kategorien und
-gruppeneigene (`customDefinition`), die globalen Übersichten, das Gruppenformular
-und das Löschen des Kontos. Eine neue Kategorie braucht nur zwei Schritte:
+die Übersichten und Blätter, die Kategorienauswahl und das Löschen des Kontos. Eine neue Kategorie braucht nur zwei Schritte:
 
 1. Eintrag in `src/categories/definitions.js` (Auswahlliste in `options.js`)
 2. `database.rules.json` — je ein Block für `paths.items` und
@@ -93,10 +105,11 @@ Speichern. `src/categories/__fixtures__/` hält den Stand vor dem Umbau fest
 
 ## Konventionen
 
-- Bewertungen liegen **global pro Kategorie** (`restaurants/`, `whiskies/`, …), nicht
-  pro Gruppe. Gruppen legen nur fest, welche Kategorien sichtbar sind und wessen
-  Wertungen zählen — deshalb Bewertungsansichten **immer** durch
-  `restrictToMembers(item, members)` filtern.
+- Bewertungen liegen **global pro Kategorie** (`restaurants/`, `whiskies/`, …). Welche
+  Kategorien jemand sieht, legt er selbst fest; mitzählen nur seine eigenen Wertungen
+  und die seiner Freunde — deshalb Bewertungsansichten **immer** durch
+  `restrictToMembers(item, circle)` filtern (`circle` = du + Freunde, aus
+  `useCategoryData`).
 - Duplikate über `dupKey(name, f1)` prüfen (Name + Stadt/Medium). Beim Bewerten eines
   vorhandenen Eintrags wird die Wertung unter `ratings/<user>` ergänzt statt ein
   Duplikat anzulegen; ein bestehender Vorschlag wandert dabei in die Bewertungen.
@@ -128,7 +141,8 @@ RateMates soll als native App in den App Store und den Play Store. Der Weg dorth
 steht in `ROADMAP.md` — vor jeder größeren Änderung dort nachsehen, in welcher
 Phase wir sind und welche Leitplanken gelten. Phase 1 (Umbau zum Projekt) ist seit
 24.09.2026 abgeschlossen. Aktuell: **Phase 2** (App-Fähigkeiten); die neue
-Aufmachung ist seit 24.09.2026 live, als Nächstes stehen PWA und Capacitor an. Aus Phase 0 ist nur noch der
+Aufmachung ist seit 24.09.2026 live, ebenso Freunde statt Gruppen; als Nächstes
+stehen PWA und Capacitor an. Aus Phase 0 ist nur noch der
 Auftragsverarbeitungsvertrag offen (Klick in der Firebase-Konsole, macht Andreas).
 
 ## Offene Themen
@@ -139,3 +153,7 @@ Auftragsverarbeitungsvertrag offen (Klick in der Firebase-Konsole, macht Andreas
   `pwHash`-Werte nicht migrierter Konten entfernen. Bekannte Lücke:
   wer einen Eintrag neu anlegt, kann dabei Bewertungen unter fremdem Namen
   mitschicken (Regeln können den Inhalt beim Anlegen nicht prüfen).
+- Lesesperre: Bewertungen sind noch für alle Angemeldeten lesbar, die Freunde
+  filtern nur die Anzeige. Vor Phase 3 (Fremde) so ändern, dass nur Freunde lesen.
+- Nach einer Bewährungszeit `groups/` und den Regelblock dafür löschen.
+- Später vielleicht: einzelne Freunde in einer Kategorie ausblenden.
