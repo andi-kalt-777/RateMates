@@ -21,6 +21,8 @@ export default [
       "react/jsx-uses-react": "error",
       // catch{} ohne Inhalt ist hier bewusst: "Fehler ignorieren, weitermachen"
       "no-empty": ["error", { allowEmptyCatch: true }],
+      // ({cfg, ...rest}) = cfg bewusst weglassen
+      "no-unused-vars": ["error", { ignoreRestSiblings: true }],
     },
   },
   {

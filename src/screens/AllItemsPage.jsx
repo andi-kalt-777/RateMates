@@ -1,7 +1,7 @@
 import {useState,useEffect} from "react";
 import {db} from "../firebase.js";
 import {stamped,normalizeRest,dupKey,restrictToMembers} from "../lib/ratings.js";
-import {CUISINES,WHISKY_TYPES,CATEGORY_GROUPS,ALL_CATS,avgOfCat,subtitleOfCat,catFilterMeta} from "../categories.js";
+import {CUISINES,WHISKY_TYPES,CATEGORY_GROUPS,ALL_CATS,avgOfCat,subtitleOfCat,catFilterMeta} from "../categories/index.js";
 import {Slider,SwipeableSheet} from "../components/ui.jsx";
 import {UserMenu} from "../components/UserMenu.jsx";
 

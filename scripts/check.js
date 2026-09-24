@@ -40,43 +40,23 @@ if (/DEIN_API_KEY|DEIN_PROJEKT_ID/.test(code)) {
   ok("Firebase-Konfiguration gesetzt");
 }
 
-// --- Kategorien: Registry und Definitionen im Gleichklang --------------------
-const defsBlock = code.match(/const CATEGORY_DEFS\s*=\s*\{([\s\S]*?)\n\};/);
-const groupsBlock = code.match(/const CATEGORY_GROUPS\s*=\s*\[([\s\S]*?)\n\];/);
-if (!defsBlock || !groupsBlock) {
-  fail("CATEGORY_DEFS oder CATEGORY_GROUPS nicht gefunden.");
+// --- Kategorien --------------------------------------------------------------
+// Quelle ist src/categories/definitions.js; Registry-Konsistenz prüfen die Tests.
+const { DEFINITIONS } = await import(
+  new URL("../src/categories/definitions.js", import.meta.url).href
+);
+const ids = DEFINITIONS.map((d) => d.id);
+ok(`${ids.length} Kategorien definiert`);
+
+// Übergang bis zur gemeinsamen Ansicht: jede Media-Kategorie braucht ihren Zweig im Routing
+const routed = [...code.matchAll(/mode==="(\w+)"/g)].map((m) => m[1]);
+const notRouted = ids.filter(
+  (id) => !routed.includes(id) && !["restaurant", "whisky"].includes(id)
+);
+if (notRouted.length) {
+  fail("Kategorie ohne Mode-Routing: " + notRouted.join(", "));
 } else {
-  const defIds = [...defsBlock[1].matchAll(/^\s{2}(\w+)\s*:\s*\{/gm)].map((m) => m[1]);
-  const grouped = [...groupsBlock[1].matchAll(/cats\s*:\s*\[([^\]]*)\]/g)]
-    .flatMap((m) => [...m[1].matchAll(/"(\w+)"/g)].map((x) => x[1]));
-
-  const missing = defIds.filter((id) => !grouped.includes(id));
-  if (missing.length) {
-    fail("Kategorie nicht in CATEGORY_GROUPS zugeordnet: " + missing.join(", "));
-  } else {
-    ok(`Alle ${defIds.length} Kategorien einer Obergruppe zugeordnet`);
-  }
-
-  // Jede Kategorie braucht ihren Eintrag in ALL_CATS (globale Übersichten)
-  const inRegistry = [...code.matchAll(/\{id:"(\w+)",icon:"[^"]*",label:"[^"]*",base:/g)]
-    .map((m) => m[1]);
-  const notRegistered = defIds.filter((id) => !inRegistry.includes(id));
-  if (notRegistered.length) {
-    fail("Kategorie fehlt in ALL_CATS: " + notRegistered.join(", "));
-  } else {
-    ok("Alle Kategorien in ALL_CATS registriert");
-  }
-
-  // Und ihren Zweig im Mode-Routing
-  const routed = [...code.matchAll(/mode==="(\w+)"/g)].map((m) => m[1]);
-  const notRouted = defIds.filter(
-    (id) => !routed.includes(id) && !["restaurant", "whisky"].includes(id)
-  );
-  if (notRouted.length) {
-    fail("Kategorie ohne Mode-Routing: " + notRouted.join(", "));
-  } else {
-    ok("Alle Kategorien im Mode-Routing verdrahtet");
-  }
+  ok("Alle Kategorien im Mode-Routing verdrahtet");
 }
 
 // --- Datenbankregeln: jeder Firebase-Pfad braucht seinen Block ----------------
@@ -86,18 +66,14 @@ try {
   const rules = JSON.parse(
     fs.readFileSync(path.join(ROOT, "database.rules.json"), "utf8")
   ).rules;
-  const paths = new Set(["restaurants", "suggestions", "whiskies", "whisky_suggestions"]);
-  for (const m of code.matchAll(/fb(?:Base|Sugg)\s*:\s*"(\w+)"/g)) paths.add(m[1]);
+  const paths = DEFINITIONS.flatMap((d) => [d.paths.items, d.paths.suggestions]);
+  const unruled = paths.filter((p) => !(p in rules));
   // Gruppeneigene Kategorien liegen unter custom_<id>; dafür steht ein $-Platzhalter
-  // in den Regeln. Ein Präfix (endet auf "_") gilt als abgedeckt, wenn es ihn gibt.
-  const hasWildcard = Object.keys(rules).some((k) => k.startsWith("$"));
-  const unruled = [...paths].filter((p) =>
-    p.endsWith("_") ? !hasWildcard : !(p in rules)
-  );
+  if (!Object.keys(rules).some((k) => k.startsWith("$"))) unruled.push("custom_* ($-Platzhalter)");
   if (unruled.length) {
     fail("Firebase-Pfad ohne Datenbankregel: " + unruled.join(", "));
   } else {
-    ok(`Alle ${paths.size} Firebase-Pfade in database.rules.json abgedeckt`);
+    ok(`Alle ${paths.length} Kategorie-Pfade und custom_* in database.rules.json abgedeckt`);
   }
 } catch (e) {
   fail("database.rules.json fehlt oder ist kein gültiges JSON: " + e.message);

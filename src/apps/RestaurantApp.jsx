@@ -1,7 +1,7 @@
 import {useState,useEffect} from "react";
 import {db} from "../firebase.js";
 import {stamped,normalizeRest,dupKey,restrictToMembers,getAvgRest} from "../lib/ratings.js";
-import {CUISINES,PRICE_LABELS,EMPTY_REST,EMPTY_RATING,EMPTY_SUGG} from "../categories.js";
+import {CUISINES,PRICE_LABELS,EMPTY_REST,EMPTY_RATING,EMPTY_SUGG} from "../categories/index.js";
 import {Slider,Stars,Badge,Toast,TypeChips,FilterBar,SwipeableSheet} from "../components/ui.jsx";
 import {AppHeader} from "../components/AppHeader.jsx";
 

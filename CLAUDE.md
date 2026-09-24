@@ -63,20 +63,24 @@ sich nur testen, wenn Andreas sich in der lokalen Vorschau selbst anmeldet.
 
 ## Kategorien hinzufügen
 
-Alle Kategorien außer Restaurant und Whisky laufen generisch über `MediaApp` mit
-einem CONFIG-Objekt. Eine neue Kategorie muss an **acht** Stellen verdrahtet werden —
-wird eine vergessen, fehlt sie stillschweigend an einer Stelle der Oberfläche:
+Jede Kategorie ist ein Eintrag in `src/categories/definitions.js` (Aufbau steht
+oben in der Datei); `CATEGORY_DEFS`, `CATEGORY_GROUPS`, `ALL_CATS` und die
+Konfiguration für `MediaApp` leitet `src/categories/index.js` daraus ab. Die
+Schlüssel in der Definition (`city`, `cuisines`, `food`, `handlung` …) sind
+Feldnamen in der Datenbank — nie umbenennen.
 
-1. `CATEGORY_DEFS` — Icon und Label (1.–5. in `src/categories.js`)
-2. `CATEGORY_GROUPS` — Zuordnung zu einer der Obergruppen
-3. `<NAME>_TYPES` — Auswahlliste für Sorten/Genres
-4. `<NAME>_CONFIG` — Labels, Kriterien, Firebase-Pfade
-5. `ALL_CATS` — Registry für die globalen Übersichten (inkl. `cfg:`)
-6. Formular-Defaults im Gruppenformular (**zwei** Stellen in
+Umbau läuft (Phase 1): Bis Restaurant, Whisky und Media eine gemeinsame Ansicht
+haben, braucht eine neue Kategorie noch vier Stellen:
+
+1. Eintrag in `src/categories/definitions.js` (Auswahlliste in `options.js`)
+2. Formular-Defaults im Gruppenformular (**zwei** Stellen in
    `src/screens/GroupsOverview.jsx`)
-7. Mode-Routing in `src/App.jsx` (Import der `_CONFIG` nicht vergessen)
-8. `database.rules.json` — je ein Block für `fbBase` und `fbSugg`, danach
-   `firebase deploy --only database`
+3. Zweig im Mode-Routing in `src/App.jsx`
+4. `database.rules.json` — je ein Block für `paths.items` und
+   `paths.suggestions`, danach `firebase deploy --only database`
+
+`src/categories/__fixtures__/vor-umbau.json` hält den Stand vor dem Umbau fest;
+`definitions.test.js` prüft, dass die Ableitungen ihm entsprechen.
 
 ## Konventionen
 

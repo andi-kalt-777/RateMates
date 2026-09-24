@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {CATEGORY_GROUPS} from "../categories.js";
+import {CATEGORY_GROUPS} from "../categories/index.js";
 import {SwipeableSheet} from "./ui.jsx";
 import {UserMenu} from "./UserMenu.jsx";
 

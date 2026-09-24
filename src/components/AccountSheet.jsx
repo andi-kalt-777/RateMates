@@ -1,7 +1,7 @@
 import {useState,useEffect} from "react";
 import {firebase,db,auth} from "../firebase.js";
 import {authEmail,nameKey,hasRealEmail,validEmail,readOnce,loginError,NO_ACCOUNT_CODES,authErrorMsg} from "../lib/auth.js";
-import {ALL_CATS} from "../categories.js";
+import {ALL_CATS} from "../categories/index.js";
 import {SwipeableSheet} from "./ui.jsx";
 
 // Passwort ändern und Konto löschen (für alle Benutzer)

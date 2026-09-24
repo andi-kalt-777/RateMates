@@ -1,7 +1,7 @@
 import {useState,useEffect} from "react";
 import {db} from "../firebase.js";
 import {stamped,dupKey,restrictToMembers,getAvgWhisky} from "../lib/ratings.js";
-import {WHISKY_TYPES,EMPTY_WHISKY,EMPTY_W_RATING,EMPTY_W_SUGG} from "../categories.js";
+import {WHISKY_TYPES,EMPTY_WHISKY,EMPTY_W_RATING,EMPTY_W_SUGG} from "../categories/index.js";
 import {Slider,Stars,Badge,Toast,TypeChips,FilterBar,SwipeableSheet} from "../components/ui.jsx";
 import {AppHeader} from "../components/AppHeader.jsx";
 

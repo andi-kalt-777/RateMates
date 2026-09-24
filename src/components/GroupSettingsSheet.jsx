@@ -1,7 +1,7 @@
 import {useState} from "react";
 import {db} from "../firebase.js";
 import {readOnce} from "../lib/auth.js";
-import {CATEGORY_DEFS,CATEGORY_GROUPS} from "../categories.js";
+import {CATEGORY_DEFS,CATEGORY_GROUPS} from "../categories/index.js";
 import {SwipeableSheet} from "./ui.jsx";
 
 // Gruppen-Einstellungen (Admin)

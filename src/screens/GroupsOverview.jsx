@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {db} from "../firebase.js";
-import {CATEGORY_DEFS,CATEGORY_GROUPS} from "../categories.js";
+import {CATEGORY_DEFS,CATEGORY_GROUPS} from "../categories/index.js";
 import {UserMenu} from "../components/UserMenu.jsx";
 
 // Gruppenübersicht

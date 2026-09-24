@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("./firebase.js", () => ({ firebase: {}, db: {}, auth: {} }));
+vi.mock("../firebase.js", () => ({ firebase: {}, db: {}, auth: {} }));
 
 const {
   CATEGORY_DEFS, CATEGORY_GROUPS, ALL_CATS,
   avgOfCat, subtitleOfCat, catFilterMeta, customConfig, modesForGroup,
-} = await import("./categories.js");
+} = await import("./index.js");
 
 const byId = Object.fromEntries(ALL_CATS.map((c) => [c.id, c]));
 
