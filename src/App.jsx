@@ -28,8 +28,8 @@ export function clearInviteHash(){
     }
   }catch{}
 }
-export function LoadingScreen({t}){
-  return(<div style={{minHeight:"100vh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}><div style={{fontSize:48}}>🍽️</div><div style={{fontFamily:"'Space Grotesk',sans-serif",color:t.sub,fontSize:14}}>Lade…</div></div>);
+export function LoadingScreen({t,text="Lade…"}){
+  return(<div style={{minHeight:"100vh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12,padding:24,textAlign:"center"}}><div style={{fontSize:48}}>🍽️</div><div style={{fontFamily:"'Space Grotesk',sans-serif",color:t.sub,fontSize:14,lineHeight:1.5,maxWidth:300}}>{text}</div></div>);
 }
 
 export function App(){
@@ -49,6 +49,10 @@ export function App(){
     setAuthReady(true);
   }),[]);
 
+  // Farbe der Statusleiste (installierte App, Android): Login immer dunkel, sonst nach Modus
+  const barColor=user?t.bg:DARK.bg;
+  useEffect(()=>{document.querySelector('meta[name="theme-color"]')?.setAttribute("content",barColor);},[barColor]);
+
   // Einladungslink einlösen, sobald Anmeldung und Freundesliste stehen
   useEffect(()=>{
     if(!user||!pendingInvite||!social.loaded)return;
@@ -65,7 +69,7 @@ export function App(){
 
   if(!authReady)return <LoadingScreen t={t}/>;
   if(!user)return <LoginScreen onLogin={setUser} invitePending={!!pendingInvite&&pendingInvite!=="legacy"}/>;
-  if(!social.loaded)return <LoadingScreen t={t}/>;
+  if(!social.loaded)return <LoadingScreen t={t} text={social.slow?"Keine Verbindung zu RateMates. Sobald du wieder online bist, geht es von selbst weiter.":"Lade…"}/>;
   if(!social.hasCategories)return <WelcomeCategories user={user} t={t}/>;
 
   const doLogout=()=>{auth.signOut().catch(()=>{});localStorage.removeItem("rmg_user");setUser(null);setTab("start");setNotice("");};

@@ -26,6 +26,15 @@ Antworte mit Andreas immer auf **Deutsch**.
   Aufmachung stehen als eigene Tokens in `LIGHT`/`DARK` (`accent`, `link`, `tile`,
   `hero…`, `tab…`, `seg…`).
   `npm run dev` startet die lokale Vorschau (http://localhost:5173/RateMates/).
+- **PWA** (seit 24.09.2026): `public/` enthält Manifest und Icons (aus
+  `emblem-gold.png` auf dunklem Grund), `src/sw.js` ist der Service Worker. Ein
+  kleines Plugin in `vite.config.js` trägt beim Build Dateiliste und Version ein
+  (kein zusätzliches Paket). Die Seite selbst lädt immer zuerst aus dem Netz, eigene
+  Dateien aus dem Speicher; Firebase läuft nie über den Worker. Im Dev-Modus ist er
+  aus — die fertige Version testet `npm run preview` (Port 4173). Ohne Netz startet
+  die App-Hülle, Daten brauchen weiter Verbindung; `useFriends` meldet dann `slow`
+  statt leerer Daten (sonst Willkommensbildschirm und überschriebene Kategorien).
+  Für die Stores fehlt noch ein Icon in 1024 px (Vorlage bisher nur ~200 px).
 - **Versionen bleiben exakt gepinnt** in `package.json` (react 18.2.0, react-dom
   18.2.0, firebase 9.23.0, Werkzeuge ebenso), `package-lock.json` ist versioniert.
   Eine ungepinnte Babel-URL hat die App schon einmal tagelang lahmgelegt (weiße
@@ -145,8 +154,8 @@ RateMates soll als native App in den App Store und den Play Store. Der Weg dorth
 steht in `ROADMAP.md` — vor jeder größeren Änderung dort nachsehen, in welcher
 Phase wir sind und welche Leitplanken gelten. Phase 1 (Umbau zum Projekt) ist seit
 24.09.2026 abgeschlossen. Aktuell: **Phase 2** (App-Fähigkeiten); die neue
-Aufmachung ist seit 24.09.2026 live, ebenso Freunde statt Gruppen; als Nächstes
-stehen PWA und Capacitor an. Aus Phase 0 ist nur noch der
+Aufmachung ist seit 24.09.2026 live, ebenso Freunde statt Gruppen und die PWA;
+als Nächstes steht Capacitor an. Aus Phase 0 ist nur noch der
 Auftragsverarbeitungsvertrag offen (Klick in der Firebase-Konsole, macht Andreas).
 
 ## Offene Themen

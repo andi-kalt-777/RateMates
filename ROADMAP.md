@@ -108,7 +108,11 @@ Ziel: Die App fühlt sich auf dem Handy wie eine App an.
       Kategorien im Reiter Kategorien, Willkommensbildschirm beim ersten Start.
       Bearbeiten, Wertung abgeben und Löschen im Detailblatt der Übersichten.
       Bestehende Gruppen einmalig in Freundschaften umgezogen.
-- [ ] PWA: Manifest, Service Worker, installierbar, lädt offline
+- [x] PWA: Manifest, Service Worker, installierbar, App-Hülle lädt offline
+      (24.09.2026). Eigener Worker ohne Zusatzpaket (`src/sw.js`, Plugin in
+      `vite.config.js`). Daten brauchen weiter Verbindung; ohne Netz zeigt die
+      App „Keine Verbindung" und macht von selbst weiter. Offen für die Stores:
+      App-Icon in 1024 px (bisherige Vorlage nur ~200 px).
 - [ ] Capacitor-Projekte für iOS und Android anlegen
 - [ ] App-Icons, Startbildschirm, Statusleiste, Safe Areas
 - [ ] Android-Zurück-Taste und Tastaturverhalten

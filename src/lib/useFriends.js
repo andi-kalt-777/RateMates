@@ -21,11 +21,14 @@ export function useFriends(user){
       ref.on("value",s=>done(s.val()),()=>done(null));
       return ref;
     });
-    const tm=setTimeout(()=>setState(s=>({...s,loaded:true})),6000);
+    // Ohne Netz kommt nichts an: dann nicht so tun, als wäre alles leer (sonst Willkommens-
+    // bildschirm und überschriebene Kategorien), sondern "langsam" melden und weiter warten
+    const tm=setTimeout(()=>setState(s=>({...s,slow:true})),6000);
     return()=>{refs.forEach(r=>r.off());clearTimeout(tm);};
   },[user]);
   return{
     loaded:state.loaded,
+    slow:!state.loaded&&!!state.slow,
     friends:namesOf(state.friends),
     friendSince:state.friends||{},
     incoming:namesOf(state.incoming),
