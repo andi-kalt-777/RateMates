@@ -18,7 +18,8 @@ Realtime Database, gehostet wird über GitHub Pages.
 ```bash
 npm install      # einmalig
 npm run dev      # lokale Vorschau auf http://localhost:5173/RateMates/
-npm run check    # Strukturprüfung, ESLint und Build — vor jedem Push ausführen
+npm test         # nur die Tests (Vitest)
+npm run check    # Strukturprüfung, ESLint, Tests und Build — vor jedem Push ausführen
 ```
 
 Ein Push auf `main` startet den Workflow `.github/workflows/deploy.yml`: er prüft,

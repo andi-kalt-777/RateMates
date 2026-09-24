@@ -49,8 +49,13 @@ Antworte mit Andreas immer auf **Deutsch**.
 ## Nach jeder Änderung
 
 ```bash
-npm run check     # Strukturprüfung (Kategorien, Regeln, Versionen), ESLint, Build
+npm run check     # Strukturprüfung (Kategorien, Regeln, Versionen), ESLint, Tests, Build
 ```
+
+Tests (Vitest) liegen neben dem Code als `*.test.js` und decken die Rechenlogik
+ab: Durchschnitte, Duplikate, Mitgliederfilter, Altformat, Kategorie-Registry,
+Anmelde-Helfer. Firebase wird dort per `vi.mock` ersetzt. Wer Rechenlogik ändert,
+passt den Test mit an; `npm test` führt nur die Tests aus.
 
 ESLint findet vor allem nicht deklarierte Namen — die lässt der Build durch, sie
 fallen sonst erst im Browser als weiße Seite auf. Angemeldete Bereiche lassen

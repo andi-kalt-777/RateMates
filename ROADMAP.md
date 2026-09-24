@@ -82,8 +82,9 @@ nichts sichtbar.
       Theme, Hilfsfunktionen (24.09.2026, 18 Dateien unter `src/`)
 - [x] Logos als eigene PNG-Dateien statt Base64 (24.09.2026)
 - [ ] Kategorien datengetrieben: eine Konfigurationsdatei statt acht Stellen
-- [ ] Automatische Tests für Rechenlogik (Durchschnitte, Duplikate,
-      Mitgliederfilter)
+- [x] Automatische Tests für Rechenlogik (Durchschnitte, Duplikate,
+      Mitgliederfilter) — 24.09.2026, Vitest, 39 Tests inkl. Kategorie-Registry
+      und Anmelde-Helfer, laufen in `npm run check` und im Deployment mit
 - [x] GitHub Actions: bei Push auf `main` bauen und auf GitHub Pages
       veröffentlichen (24.09.2026)
 - [x] `npm run check` durch Linter und Build ersetzen (24.09.2026; die
