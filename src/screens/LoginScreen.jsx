@@ -107,7 +107,7 @@ export function LoginScreen({onLogin,invitePending}){
     setBusy(false);
   };
   return(
-    <div style={{minHeight:"100vh",background:"#0b0b0a",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+    <div style={{minHeight:"100vh",background:"#0b0b0a",display:"flex",alignItems:"center",justifyContent:"center",padding:"calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom))"}}>
       <div style={{background:"white",borderRadius:24,padding:"36px 28px",width:"100%",maxWidth:360,textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
         <img src={LOGO_SRC_DARK} alt="RateMates" style={{width:160,height:160,objectFit:"contain",margin:"0 auto 4px",display:"block"}}/>
         <div style={{fontSize:12,color:"#8a847c",marginBottom:invitePending?14:24}}>Gemeinsam bewerten mit Freunden</div>

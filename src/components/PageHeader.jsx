@@ -33,11 +33,12 @@ export function Chips({items,value,onChange,t}){
     </div>
   );
 }
-// Seitenrahmen der Hauptbereiche: Hintergrund, Breite, Platz für die Leiste unten
+// Seitenrahmen der Hauptbereiche: Hintergrund, Breite, Platz für die Leiste unten.
+// Oben Platz für die Statusleiste: in der installierten App liegt die Seite darunter.
 export function Page({t,children}){
   return(
     <div style={{minHeight:"100vh",background:t.bg,transition:"background 0.3s"}}>
-      <main style={{maxWidth:440,margin:"0 auto",padding:"22px 18px calc(100px + env(safe-area-inset-bottom))"}}>{children}</main>
+      <main style={{maxWidth:440,margin:"0 auto",padding:"calc(22px + env(safe-area-inset-top)) 18px calc(100px + env(safe-area-inset-bottom))"}}>{children}</main>
     </div>
   );
 }
