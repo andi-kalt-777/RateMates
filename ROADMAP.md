@@ -107,7 +107,8 @@ Ziel: Die App fühlt sich auf dem Handy wie eine App an.
       Einladungslink (14 Tage, einmal verwendbar) oder Anfrage per Name, eigene
       Kategorien im Reiter Kategorien, Willkommensbildschirm beim ersten Start.
       Bearbeiten, Wertung abgeben und Löschen im Detailblatt der Übersichten.
-      Bestehende Gruppen einmalig in Freundschaften umgezogen.
+      Bestehende Gruppen einmalig in Freundschaften umgezogen. Seit 27.09.2026
+      kann jeder seine Freunde in eigene, nur für ihn sichtbare Gruppen sortieren.
 - [x] PWA: Manifest, Service Worker, installierbar, App-Hülle lädt offline
       (24.09.2026). Eigener Worker ohne Zusatzpaket (`src/sw.js`, Plugin in
       `vite.config.js`). Daten brauchen weiter Verbindung; ohne Netz zeigt die

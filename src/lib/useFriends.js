@@ -5,15 +5,17 @@ import {
   newInviteCode,inviteStatus,namesOf,sendRequestUpdate,cancelRequestUpdate,declineRequestUpdate,
   acceptRequestUpdate,acceptInviteUpdate,removeFriendUpdate,
 } from "./friends.js";
+import {groupRecord,removeFromGroupsUpdate} from "./friendGroups.js";
 
 const TS=()=>firebase.database.ServerValue.TIMESTAMP;
 
-// Freunde, offene Anfragen und eigene Kategorien des angemeldeten Nutzers, live
+// Freunde, offene Anfragen, eigene Kategorien und Freundes-Gruppen des angemeldeten Nutzers, live
 export function useFriends(user){
   const [state,setState]=useState({loaded:false});
   useEffect(()=>{
     if(!user){setState({loaded:false});return;}
-    const paths={friends:"friends/"+user,incoming:"friend_requests/"+user,sent:"friend_requests_sent/"+user,categories:"users/"+user+"/categories"};
+    const paths={friends:"friends/"+user,incoming:"friend_requests/"+user,sent:"friend_requests_sent/"+user,
+      categories:"users/"+user+"/categories",groups:"users/"+user+"/friendGroups"};
     const got={};
     const refs=Object.entries(paths).map(([key,p])=>{
       const ref=db.ref(p);
@@ -35,6 +37,7 @@ export function useFriends(user){
     sent:namesOf(state.sent),
     categories:state.categories||{},
     hasCategories:Object.values(state.categories||{}).some(Boolean),
+    groups:state.groups||{},
   };
 }
 
@@ -54,7 +57,11 @@ export async function sendFriendRequest(me,input,{friends,incoming,sent}){
 export const acceptFriendRequest=(me,from)=>db.ref().update(acceptRequestUpdate(me,from,TS()));
 export const declineFriendRequest=(me,from)=>db.ref().update(declineRequestUpdate(me,from));
 export const cancelFriendRequest=(me,to)=>db.ref().update(cancelRequestUpdate(me,to));
-export const removeFriend=(me,other)=>db.ref().update(removeFriendUpdate(me,other));
+export const removeFriend=(me,other,groups)=>db.ref().update({...removeFriendUpdate(me,other),...removeFromGroupsUpdate(me,groups,other)});
+
+// Eigene Freundes-Gruppen (nur für einen selbst sichtbar)
+export const saveFriendGroup=(me,id,name,members)=>db.ref("users/"+me+"/friendGroups/"+id).set(groupRecord(name,members));
+export const deleteFriendGroup=(me,id)=>db.ref("users/"+me+"/friendGroups/"+id).remove();
 
 // Einladungslink: 14 Tage gültig, einmal verwendbar
 export async function createInviteLink(me){

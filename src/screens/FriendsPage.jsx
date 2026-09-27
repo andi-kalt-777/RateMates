@@ -3,12 +3,15 @@ import {INVITE_DAYS} from "../lib/friends.js";
 import {
   sendFriendRequest,acceptFriendRequest,declineFriendRequest,cancelFriendRequest,removeFriend,createInviteLink,
 } from "../lib/useFriends.js";
+import {sortIntoGroups} from "../lib/friendGroups.js";
 import {initialsOf,UserMenu} from "../components/UserMenu.jsx";
 import {Page,PageHeader} from "../components/PageHeader.jsx";
+import {FriendGroupSheet} from "../components/FriendGroupSheet.jsx";
 
-// FREUNDE: einladen, Anfragen annehmen, Freundesliste
+// FREUNDE: einladen, Anfragen annehmen, Freundesliste mit eigenen Gruppen
 export function FriendsPage({user,social,notice,dark,setDark,t,onLogout}){
-  const {friends,friendSince,incoming,sent}=social;
+  const {friends,friendSince,incoming,sent,groups}=social;
+  const [editGroup,setEditGroup]=useState(null); // null, "new" oder eine Gruppe
   const [name,setName]=useState("");
   const [msg,setMsg]=useState("");
   const [busy,setBusy]=useState(false);
@@ -37,7 +40,7 @@ export function FriendsPage({user,social,notice,dark,setDark,t,onLogout}){
   },"Anfrage konnte nicht gesendet werden.");
   const unfriend=f=>{
     if(!window.confirm("Freundschaft mit "+f+" beenden?\n\nIhr seht dann gegenseitig keine Bewertungen mehr."))return;
-    run(()=>removeFriend(user,f),"Konnte nicht entfernt werden.");
+    run(()=>removeFriend(user,f,groups),"Konnte nicht entfernt werden.");
   };
 
   const card={background:t.card,border:`1px solid ${t.cardBorder}`,borderRadius:16,boxShadow:`0 2px 12px ${t.cardShadow}`};
@@ -56,6 +59,8 @@ export function FriendsPage({user,social,notice,dark,setDark,t,onLogout}){
     </div>
   );
   const since=f=>{const s=friendSince[f]?.since;return typeof s==="number"?"befreundet seit "+new Date(s).toLocaleDateString("de-DE"):null;};
+  const friendRow=(f,i)=>row(f,i,since(f),<button style={quiet} disabled={busy} onClick={()=>unfriend(f)} aria-label={"Freundschaft mit "+f+" beenden"}>Entfernen</button>);
+  const sorted=sortIntoGroups(groups,friends);
   const banner=m=>m&&<div role="status" style={{fontSize:13,lineHeight:1.45,padding:"11px 14px",borderRadius:12,marginBottom:16,background:m.startsWith("✅")?`${t.accent}1f`:`${t.danger}14`,color:m.startsWith("✅")?t.title:t.danger}}>{m}</div>;
 
   return(
@@ -93,11 +98,29 @@ export function FriendsPage({user,social,notice,dark,setDark,t,onLogout}){
       </section>
 
       <section style={{marginBottom:22}}>
-        <h2 style={h2}>Deine Freunde</h2>
-        <div style={{...card,padding:"2px 16px"}}>
-          {friends.length===0&&<div style={{fontSize:13,color:t.sub,padding:"14px 0",lineHeight:1.5}}>Noch niemand. Lade deine Freunde ein, dann seht ihr gegenseitig eure Bewertungen.</div>}
-          {friends.map((f,i)=>row(f,i,since(f),<button style={quiet} disabled={busy} onClick={()=>unfriend(f)} aria-label={"Freundschaft mit "+f+" beenden"}>Entfernen</button>))}
+        <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:10}}>
+          <h2 style={h2}>Deine Freunde</h2>
+          {friends.length>0&&<button onClick={()=>setEditGroup("new")} style={{...quiet,color:t.link,padding:0,minHeight:32}}>+ Gruppe</button>}
         </div>
+        {friends.length===0&&<div style={{...card,padding:"14px 16px",fontSize:13,color:t.sub,lineHeight:1.5}}>Noch niemand. Lade deine Freunde ein, dann seht ihr gegenseitig eure Bewertungen.</div>}
+        {sorted.groups.map(g=>(
+          <div key={g.id} style={{marginBottom:12}}>
+            <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:10,margin:"4px 2px 6px"}}>
+              <span style={{fontSize:13,fontWeight:700,color:t.title}}>{g.name} <span style={{fontWeight:500,color:t.sub}}>· {g.members.length}</span></span>
+              <button onClick={()=>setEditGroup(g)} style={{...quiet,color:t.link,padding:0,minHeight:32}} aria-label={"Gruppe "+g.name+" bearbeiten"}>Bearbeiten</button>
+            </div>
+            <div style={{...card,padding:"2px 16px"}}>
+              {g.members.length===0&&<div style={{fontSize:13,color:t.sub,padding:"12px 0"}}>Noch niemand in dieser Gruppe.</div>}
+              {g.members.map((f,i)=>friendRow(f,i))}
+            </div>
+          </div>
+        ))}
+        {sorted.ungrouped.length>0&&(
+          <div>
+            {sorted.groups.length>0&&<div style={{fontSize:13,fontWeight:700,color:t.title,margin:"4px 2px 6px"}}>Weitere Freunde <span style={{fontWeight:500,color:t.sub}}>· {sorted.ungrouped.length}</span></div>}
+            <div style={{...card,padding:"2px 16px"}}>{sorted.ungrouped.map((f,i)=>friendRow(f,i))}</div>
+          </div>
+        )}
       </section>
 
       {sent.length>0&&(
@@ -109,6 +132,7 @@ export function FriendsPage({user,social,notice,dark,setDark,t,onLogout}){
           </div>
         </section>
       )}
+      {editGroup&&<FriendGroupSheet user={user} group={editGroup==="new"?null:editGroup} groups={groups} friends={friends} t={t} onClose={()=>setEditGroup(null)}/>}
     </Page>
   );
 }

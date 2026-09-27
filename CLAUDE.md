@@ -76,7 +76,10 @@ Antworte mit Andreas immer auf **Deutsch**.
   Kategorien liegen in `users/<Name>/categories` (nur für den Besitzer lesbar); ohne
   Kategorien zeigt die App `WelcomeCategories`. Die alten Daten unter `groups/`
   werden nicht mehr gelesen und bleiben nur als Rückweg liegen (Umzug:
-  `scripts/migrate-friends.mjs`).
+  `scripts/migrate-friends.mjs`). Eigene **Freundes-Gruppen** zum Sortieren
+  (`users/<Name>/friendGroups/<id> = {name, members}`, Logik in
+  `lib/friendGroups.js`) sieht nur der Besitzer; sie ändern nichts an Freundschaft
+  oder Sichtbarkeit, ein Freund kann in mehreren oder keiner stehen.
 - **Kategorie-Wünsche** (`category_requests/<Schlüssel>/users/<Name>`, Logik in
   `lib/wishes.js`): jeder schreibt nur seinen eigenen, in der App liest sie niemand.
   Andreas wertet sie am PC mit `npm run wishes` aus und will ausdrücklich **keinen
