@@ -114,7 +114,10 @@ Ziel: Die App fühlt sich auf dem Handy wie eine App an.
       `vite.config.js`). Daten brauchen weiter Verbindung; ohne Netz zeigt die
       App „Keine Verbindung" und macht von selbst weiter. Offen für die Stores:
       App-Icon in 1024 px (bisherige Vorlage nur ~200 px).
-- [ ] Capacitor-Projekte für iOS und Android anlegen
+- [x] Capacitor-Projekte für iOS und Android anlegen (28.09.2026, Capacitor
+      8.5.2, `npm run app:sync`). Noch nicht auf einem Gerät gebaut: Android
+      braucht Android Studio, iOS den Mac. Beim ersten iOS-Start prüfen, ob die
+      Anmeldung klappt (Firebase Auth im WebView).
 - [ ] App-Icons, Startbildschirm, Statusleiste, Safe Areas
 - [ ] Android-Zurück-Taste und Tastaturverhalten
 - [ ] Push-Nachrichten (z. B. neue Bewertung eines Freundes, Freundschaftsanfrage)

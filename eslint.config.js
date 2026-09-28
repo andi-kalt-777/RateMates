@@ -5,7 +5,7 @@ import react from "eslint-plugin-react";
 // Vor allem gegen Fehler, die der Build nicht findet: nicht deklarierte Namen,
 // Tippfehler in Variablen, doppelte Schlüssel.
 export default [
-  { ignores: ["dist/", "node_modules/"] },
+  { ignores: ["dist/", "dist-app/", "android/", "ios/", "node_modules/"] },
   js.configs.recommended,
   {
     files: ["src/**/*.{js,jsx}"],

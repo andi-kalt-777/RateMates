@@ -11,14 +11,20 @@
     "lint": "eslint .",
     "test": "vitest run",
     "check": "node scripts/check.js && eslint . && vitest run && vite build",
-    "wishes": "node scripts/wishes.mjs"
+    "wishes": "node scripts/wishes.mjs",
+    "build:app": "vite build --mode app",
+    "app:sync": "vite build --mode app && cap sync"
   },
   "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2",
     "firebase": "9.23.0",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.2",
     "@eslint/js": "9.39.5",
     "@vitejs/plugin-react": "6.1.1",
     "eslint": "9.39.5",

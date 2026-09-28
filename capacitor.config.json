@@ -1,0 +1,6 @@
+{
+  "appId": "de.ratemates.app",
+  "appName": "RateMates",
+  "webDir": "dist-app",
+  "backgroundColor": "#0b0b0a"
+}

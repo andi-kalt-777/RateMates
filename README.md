@@ -54,6 +54,28 @@ Nutzer in der Firebase-Konsole unter Authentication → Nutzer gelöscht werden
 (das Skript nennt die Adresse). Beim nächsten Login zieht das Konto automatisch
 wieder um; das Startpasswort wird dann in der App geändert.
 
+## Native App (Capacitor)
+
+Die Store-Apps packen dieselbe Web-App in eine native Hülle. Projekte liegen in
+`android/` und `ios/`, Einstellungen in `capacitor.config.json` (App-Kennung
+`de.ratemates.app`, bis zur ersten Store-Veröffentlichung noch änderbar). Nach
+jeder Änderung an der App die Web-Dateien neu bauen und in beide Projekte kopieren:
+
+```bash
+npm run app:sync
+```
+
+**Android** (Windows oder Mac): Android Studio installieren, dann
+
+```bash
+npx cap open android
+```
+
+und in Android Studio auf „Run“ – auf einem angeschlossenen Handy oder im Emulator.
+
+**iOS** (nur auf dem Mac mit Xcode): Repository holen, `npm ci`, dann
+`npm run app:sync` und `npx cap open ios`, in Xcode Team wählen und starten.
+
 ## Kategorie-Wünsche
 
 Im Reiter Kategorien kann jeder eine neue Kategorie wünschen. Die Wünsche sind in

@@ -35,6 +35,11 @@ Antworte mit Andreas immer auf **Deutsch**.
   die App-Hülle, Daten brauchen weiter Verbindung; `useFriends` meldet dann `slow`
   statt leerer Daten (sonst Willkommensbildschirm und überschriebene Kategorien).
   Für die Stores fehlt noch ein Icon in 1024 px (Vorlage bisher nur ~200 px).
+- **Capacitor** (seit 28.09.2026, 8.5.2): `android/` und `ios/` (Swift Package
+  Manager, kein CocoaPods), `capacitor.config.json` mit `webDir: dist-app`.
+  `npm run app:sync` baut mit `--mode app` (relative Pfade, kein Service Worker,
+  Ausgabe `dist-app/`) und kopiert in beide Projekte. Der Web-Build für GitHub Pages
+  bleibt unverändert. Native Icons und Startbild sind noch die Capacitor-Vorlage.
 - **Versionen bleiben exakt gepinnt** in `package.json` (react 18.2.0, react-dom
   18.2.0, firebase 9.23.0, Werkzeuge ebenso), `package-lock.json` ist versioniert.
   Eine ungepinnte Babel-URL hat die App schon einmal tagelang lahmgelegt (weiße

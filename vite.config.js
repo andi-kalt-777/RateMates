@@ -30,11 +30,19 @@ function serviceWorker() {
   };
 }
 
-// GitHub Pages liefert die App unter /RateMates/ aus.
-export default defineConfig({
-  base: "/RateMates/",
-  plugins: [react(), serviceWorker()],
-  // Das Firebase-compat-SDK allein ist gut 400 kB; bis zum Wechsel auf das
-  // modulare SDK ist ein Paket über 500 kB normal.
-  build: { chunkSizeWarningLimit: 800 },
+// Web: GitHub Pages liefert die App unter /RateMates/ aus, mit Service Worker.
+// App (--mode app, `npm run build:app`): für Capacitor nach dist-app/, relative Pfade,
+// kein Service Worker — die Dateien liegen dort ohnehin auf dem Gerät.
+export default defineConfig(({ mode }) => {
+  const app = mode === "app";
+  return {
+    base: app ? "./" : "/RateMates/",
+    plugins: app ? [react()] : [react(), serviceWorker()],
+    build: {
+      outDir: app ? "dist-app" : "dist",
+      // Das Firebase-compat-SDK allein ist gut 400 kB; bis zum Wechsel auf das
+      // modulare SDK ist ein Paket über 500 kB normal.
+      chunkSizeWarningLimit: 800,
+    },
+  };
 });
