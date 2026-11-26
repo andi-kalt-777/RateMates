@@ -18,6 +18,10 @@
         const keys = await caches.keys();
         await Promise.all(keys.map((k) => caches.delete(k)));
       }
+      // Alte Anmeldedaten von RateMates auf dieser Adresse löschen (die neue Adresse
+      // ist eine eigene Herkunft, dort meldet man sich neu an)
+      try { localStorage.removeItem("rmg_user"); localStorage.removeItem("rm_city"); } catch (e) {}
+      if ("indexedDB" in window) indexedDB.deleteDatabase("firebaseLocalStorageDb");
     } catch (e) { /* Weiterleitung trotzdem */ }
     location.replace("https://ratemates.web.app/" + location.search + location.hash);
   })();
